@@ -1,0 +1,32 @@
+# This is a valid list of tokens support by the language
+//
+# Iteration
+WHILE DO ENDWHILE
+REPEAT UNTIL
+FOR TO NEXT
+# Selection
+IF ELSE ENDIF
+CASE OF ENDCASE
+# Declaration
+DECLARE CONSTANT
+# Input and Output
+INPUT OUTPUT PRINT
+# Data types
+INTEGER REAL DATE BOOLEAN STRING CHAR ARRAY OF
+# Comparison and assignment
+< <= <> <- > >= = 
+# Function and procedures
+FUNCTION ENDFUNCTION
+CALL PROCEDURE ENDPROCEDURE
+# Logical operators
+AND OR NOT TRUE FALSE
+[ ] { } ( ) " : . ' + - * /
+# User defined types
+TYPE ENDTYPE
+# Built in functions
+DIV MOD 
+RIGHT LEFT MID LCASE UCASE LENGTH INT RAND
+# File operations
+OPENFILE FOR READ WRITE APPEND READFILE EOF WRITEFILE CLOSEFILE SEEK GETRECORD PUTRECORD
+# OOP
+CLASS ENDCLASS PRIVATE PUBLIC SUPER NEW

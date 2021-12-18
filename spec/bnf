@@ -1,0 +1,14 @@
+<program ::= <statements> EOF
+<statements> ::= <statement> <statements>
+<statement> ::= <selection> | empty
+<selection> ::= <if statement> | <case statement>
+<if statement> :: 'IF' <conditional expr> 'THEN' <statements> 'ENDIF' 
+<case statement> :: 'CASE 'OF' <identifier> <case list> <otherwise> 'ENDCASE'
+<case list> ::= <literal> ':' <statement> | <case list>
+<otherwise> ::= 'OTHERWISE' ':' <statement> | empty
+<conditional expr> :: <expr> <comparision> <expr>
+<comparison> ::= '<' | '<=' | '=' | '<>' | '>' | '>='
+<expr> ::= <literal> | <expr> <binary op> <expr>
+<literal> ::= <number>
+<number> ::= [0-9][0-9]*
+<binary op> ::= [+-/*]

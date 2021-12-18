@@ -1,0 +1,3 @@
+FOR I <- 1 TO 100
+    OUTPUT I
+NEXT I
