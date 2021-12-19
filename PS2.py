@@ -1,5 +1,7 @@
 import Scanner
 import Parser
+# import ASTPrinter
+import Interpretor
 
 class PS2:
     
@@ -23,11 +25,16 @@ class PS2:
     def run(source):
         scanner =  Scanner.Scanner(source)
         tokens = scanner.scanTokens()
+        
+        '''
         for t in tokens:
             print(f"{t}")
-
+        '''
         parser = Parser.Parser(tokens)
-        parser.parse() 
+
+        #ASTPrinter.ASTPrinter(parser.parse()).print()
+        
+        print(Interpretor.Interpretor(parser.parse()).interpret())
 
     def error(line, message):
         PS2.report(line, "", message)

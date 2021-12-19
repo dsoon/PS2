@@ -32,9 +32,6 @@ class TokenType(enum.Enum):
     LESS_EQUAL = "<="
     ASSIGNMENT = "<-" # Assignment
 
-
-    OPERATOR="OPERATOR"
-
     IDENTIFIER="IDENTIFIER"
     CONSTANT="CONSTANT"
 
@@ -219,4 +216,4 @@ class Token:
         return self.str()
 
     def __str__(self):
-        return f"{self.type} {self.lexeme} {self.literal}"
+        return f"type={self.type} lexeme={self.lexeme} literal={self.literal} line#={self.line}"

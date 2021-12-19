@@ -1,11 +1,16 @@
 from abc import ABC
 
-import Token
+from Token import TokenType as TT
 import PS2
 
 class Expr(ABC):
     def accept(self, visitor):
         pass
+
+class UNARY_Expr(Expr):
+    def __init__(self, operator, right):
+        self.operator = operator
+        self.right = right
 
 class BINARY_Expr(Expr):
     def __init__(self, left, operator, right):
@@ -13,35 +18,13 @@ class BINARY_Expr(Expr):
         self.operator = operator
         self.right = right
 
-
 class LITERAL_Expr(Expr):
-    def __init__(self, operator, expression):
-        self.operator = operator
+    def __init__(self, expression):
         self.expression = expression
 
-'''
-class Stmt(ABC):
-    def accept(self, visitor):
-        pass
-
-class IF_Stmt(Stmt):
-    def __init__(self, condition, statement_list):
-        self.condition = condition
-        self.statement_list = statement_list
-
-
-class IF_ELSE_Stmt(Stmt):
-    def __init__(self, condition, true_statement_list, false_statement_list):
-        self.condition = condition
-        self.true_statement_list = true_statement_list
-        self.false_statement_list = false_statement_list
-
-class CASE_Stmt(Stmt):
-    def __init__(self, of, case_body_list, otherwise_statement_list):
-        self.of = of
-        self.case_body_list = case_body_list
-        self.otherwise_statement_list
-'''
+class GROUPING_Expr(Expr):
+    def __init__(self, expression):
+        self.expression = expression
 
 class Parser:
 
@@ -50,6 +33,7 @@ class Parser:
         self.current = 0
 
     def peek(self):
+        #print(f"peek current={self.current}")
         return self.tokens[self.current]
 
     def advance(self):
@@ -60,18 +44,95 @@ class Parser:
         else:
             PS2.PS2.error(self.tokens[self.current].line, "unexpected EOF")
 
+    def previous(self):
+        if self.current > 0:
+            return self.tokens[self.current - 1]
+        else:
+            PS2.PS2.error(self.tokens[self.current].line, "Call to Parser.previous without previous token")            
+
     def parse(self):
         return self.expression()
 
     def expression(self):
-        if self.peek() == Token.TokenType.IDENTIFIER:
-            id = self.advance()
-            if self.peek() == Token.TokenType.OPERATOR:
-                return Binary_Expr(id, self.advance(), self.expression()
-        elif self.peek() == Token.TokenType.INTEGER:
-            
+	    return self.equality()
+
+    def equality(self):
+	    expr = self.comparision()
+	    while self.match ( [TT.BANG_EQUAL, TT.EQUAL_EQUAL] ):
+		    operator = self.previous()
+		    right = self.comparision()
+		    expr = BINARY_Expr(expr, operator, right)
+
+	    return expr
+
+    def comparision(self):
+        expr = self.term()
+
+        while self.match([TT.GREATER, TT.GREATER_EQUAL, TT.LESS, TT.LESS_EQUAL]):
+            operator = self.previous()
+            right = self.term()
+            expr = BINARY_Expr(expr, operator, right)
+        return expr
+
+    def term(self):
+
+        expr = self.factor()
+
+        while self.match([TT.MINUS, TT.PLUS]):
+
+            operator = self.previous()
+            right = self.factor()
+
+            expr = BINARY_Expr(expr, operator, right)
+
+        return expr
+
+    def factor(self):
+        expr = self.unary()
+
+        while self.match([TT.SLASH, TT.STAR]):
+            operator = self.previous()
+            right = self.unary()
+            expr = BINARY_Expr(expr, operator, right)
+
+        return expr
+
+    def unary(self):
+        if self.match([TT.BANG, TT.MINUS]):
+            operator = self.previous()
+            right = self.unary()
+            return UNARY_Expr(operator, right)
+
+        return self.primary()
+
+    def primary(self):
+        
+        if self.match([TT.FALSE]): 
+            return LITERAL_Expr(False)
+
+        if self.match([TT.TRUE]): 
+            return LITERAL_Expr(True)
+
+        if self.match([TT.INTEGER, TT.REAL, TT.STRING]): 
+            return LITERAL_Expr(self.previous().literal)
+
+        if self.match([TT.LEFT_PAREN]):
+            expr = self.expression()
+
+            if self.match([TT.RIGHT_PAREN]):
+                return GROUPING_Expr(expr)
+
+            else:
+                PS2.PS2.error(self.tokens[self.current].line, "missing ')'")
 
 
-        
-        
-        
+    def match(self, tokens):
+
+        if self.peek().type in tokens:
+            self.advance()
+            return True
+
+        return False
+
+
+

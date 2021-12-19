@@ -1,4 +1,6 @@
-import Token
+from Token import TokenType as TT
+from Token import Token
+
 import PS2
 
 class Scanner:
@@ -15,71 +17,71 @@ class Scanner:
             self.start = self.current
             self.scanToken()
 
-        self.tokens.append(Token.Token(Token.TokenType.EOF, "", None, self.line))
+        self.tokens.append(Token(TT.EOF, "", None, self.line))
         return self.tokens;
 
     def scanToken(self):
         c = self.advance()
 
         if c == "(":
-            self.addToken(Token.TokenType.LEFT_PAREN)
+            self.addToken(TT.LEFT_PAREN)
 
         elif c == ")":
-            self.addToken(Token.TokenType.RIGHT_PAREN)
+            self.addToken(TT.RIGHT_PAREN)
 
         elif c == "{":
-            self.addToken(Token.TokenType.LEFT_BRACE)
+            self.addToken(TT.LEFT_BRACE)
 
         elif c == "}":
-            self.addToken(Token.TokenType.RIGHT_BRACE)
+            self.addToken(TT.RIGHT_BRACE)
 
         elif c == ",":
-            self.addToken(Token.TokenType.COMMA)
+            self.addToken(TT.COMMA)
 
         elif c == ".":
-            self.addToken(Token.TokenType.DOT)
+            self.addToken(TT.DOT)
 
         elif c == "-":
-            self.addToken(Token.TokenType.OPERATOR, c)
+            self.addToken(TT.MINUS)
 
         elif c == "+":
-            self.addToken(Token.TokenType.OPERATOR, c)
+            self.addToken(TT.PLUS)
 
-        elif c == "-":
-            self.addToken(Token.TokenType.SEMICOLON)
+        elif c == ";":
+            self.addToken(TT.SEMICOLON)
 
         elif c == ":":
-            self.addToken(Token.TokenType.COLON)
+            self.addToken(TT.COLON)
 
         elif c == "*":
-            self.addToken(Token.TokenType.OPERATOR, c)
+            self.addToken(TT.STAR)
 
         elif c == "!":
-            self.addToken(Token.TokenType.OPERATOR, "!=" if self.match("=") else "!")
+            self.addToken(TT.BANG_EQUAL if self.match("=") else TT.BANG)
 
         elif c == "=":
-            self.addToken(Token.TokenType.OPERATOR, "==" if self.match("=") else "=")
+            self.addToken(TT.EQUAL_EQUAL if self.match("=") else TT.EQUAL)
 
         elif c == "<":
 
             if self.match("=") : # matching <=
-                self.addToken(Token.TokenType.OPERATOR, "<=")
+                self.addToken(TT.LESS_EQUAL)
 
             elif self.match("-"): # matching <- assignment
-                self.addToken(Token.TokenType.ASSIGNMENT, "<-")
+                self.addToken(TT.ASSIGNMENT)
 
             else: # just <
-                self.addToken(Token.TokenType.OPERATOR, "<")
+                self.addToken(TT.LESS)
 
         elif c == ">":
-            self.addToken(Token.TokenType.OPERATOR, ">=" if self.match("=") else ">")
+            self.addToken(TT.GREATER_EQUAL if self.match("=") else TT.GREATER)
 
         elif c == "/":
             if self.match('/'): # got a slash
                 while self.peek() != "\n" and not self.isAtEnd(): 
                     self.advance()
             else:
-                self.addToken(Token.TokenType.OPERATOR, "/")
+                self.addToken(TT.SLASH)
 
         elif c == " " or c == "\r" or c == "\t":
           pass
@@ -115,8 +117,9 @@ class Scanner:
         if len(args) == 1:
             self.addToken(args[0], None)
 
-        else: #length == 2
-            self.tokens.append(Token.Token(args[0], self.source[self.start:self.current], args[1], self.line))
+        elif len(args) == 2: #length == 2
+            self.tokens.append(Token(args[0], self.source[self.start:self.current], args[1], self.line))
+
 
     def advance(self):
         c = self.source[self.current]
@@ -153,7 +156,7 @@ class Scanner:
         # trim surrounding string
 
         value = self.source[self.start + 1 : self.current -1]
-        self.addToken(Token.TokenType.STRING, value)
+        self.addToken(TT.STRING, value)
 
     def number(self):
         
@@ -169,9 +172,9 @@ class Scanner:
             while self.peek().isdigit(): 
                 self.advance()
 
-            self.addToken(Token.TokenType.REAL, float(self.source[self.start:self.current]))
+            self.addToken(TT.REAL, float(self.source[self.start:self.current]))
         else:
-            self.addToken(Token.TokenType.INTEGER, int(self.source[self.start:self.current]))
+            self.addToken(TT.INTEGER, int(self.source[self.start:self.current]))
     
     def identifier(self):
         while self.peek().isalnum() or self.peek() == "_":
@@ -181,5 +184,5 @@ class Scanner:
         if identifier in Token.keywords:
             self.addToken(Token.keywords[identifier])
         else:    
-            self.addToken(Token.TokenType.IDENTIFIER, identifier)
+            self.addToken(TT.IDENTIFIER, identifier)
         
