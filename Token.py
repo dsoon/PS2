@@ -19,6 +19,12 @@ class TokenType(enum.Enum):
     STAR= "*"
     CAP="^"
     COLON=":"
+    AMPERSAND="&"
+    QUOTE="'"
+    
+    # Multi character operators
+    MOD="MOD"
+    DIV="DIV"
 
     # One or two character tokens.
     BANG = "!" 
@@ -30,7 +36,7 @@ class TokenType(enum.Enum):
     GREATER_EQUAL = ">="
     LESS = "<" 
     LESS_EQUAL = "<="
-    ASSIGNMENT = "<-" # Assignment
+    ASSIGN = "<-" # Assignment
 
     IDENTIFIER="IDENTIFIER"
     CONSTANT="CONSTANT"
@@ -68,6 +74,7 @@ class TokenType(enum.Enum):
     # Functions and Procedures
     FUNCTION="FUNCTION"
     RETURN="RETURN" 
+    RETURNS="RETURNS" 
     ENDFUNCTION="ENDFUNCTION"
 
     PROCEDURE="PROCEDURE"
@@ -75,7 +82,7 @@ class TokenType(enum.Enum):
     CALL="CALL"
 
     # Input / Output
-    OUTPUT="PRINT"
+    OUTPUT="OUTPUT"
     PRINT="OUTPUT" 
     INPUT="INPUT"
 
@@ -91,7 +98,6 @@ class TokenType(enum.Enum):
     GETRECORD="GETRECORD"
     PUTRECORD="PUTRECORD"
 
-
     # Iteration
     WHILE="WHILE"
     DO="DO"
@@ -103,6 +109,7 @@ class TokenType(enum.Enum):
     FOR="FOR"
     TO="TO"
     NEXT="NEXT"
+    STEP="STEP"
 
     # Selection
     IF="IF"
@@ -116,17 +123,6 @@ class TokenType(enum.Enum):
     ENDCASE="ENDCASE"
 
     # Built in functions
-    RIGHT="RIGHT"
-    LEFT="LEFT"
-    LENGTH="LENGTH"
-    MID="MID"
-    LCASE="LCASE"
-    UCASE="UCASE"
-    INT="INT"
-    RAND="RAND"
-    MOD="MOD"
-    DIV="DIV"
-
 
     EOF = "EOF"
   
@@ -158,6 +154,7 @@ keywords = {
     "THIS": TokenType.THIS,
     "FUNCTION": TokenType.FUNCTION,
     "RETURN": TokenType.RETURN,
+    "RETURNS": TokenType.RETURNS,
     "ENDFUNCTION": TokenType.ENDFUNCTION,
     "PROCEDURE": TokenType.PROCEDURE,
     "ENDPROCEDURE": TokenType.ENDPROCEDURE,
@@ -183,6 +180,7 @@ keywords = {
     "FOR": TokenType.FOR,
     "TO": TokenType.TO,
     "NEXT": TokenType.NEXT,
+    "STEP": TokenType.STEP,
     "IF": TokenType.IF,
     "THEN": TokenType.THEN,
     "ELSE": TokenType.ELSE,
@@ -191,19 +189,14 @@ keywords = {
     "OF": TokenType.OF,
     "OTHERWISE": TokenType.OTHERWISE,
     "ENDCASE": TokenType.ENDCASE,
-    "RIGHT": TokenType.RIGHT,
-    "LEFT": TokenType.LEFT,
-    "LENGTH": TokenType.LENGTH,
-    "MID": TokenType.MID,
-    "LCASE": TokenType.LCASE,
-    "UCASE": TokenType.UCASE,
-    "INT": TokenType.INT,
-    "RAND": TokenType.RAND,
+
     "MOD": TokenType.MOD,
     "DIV": TokenType.DIV,
-    "EOF": TokenType.EOF,
-}
 
+    "EOF": TokenType.EOF,
+
+}
+    
 class Token:
 
     def __init__(self, type, lexeme, literal, line):
@@ -216,4 +209,4 @@ class Token:
         return self.str()
 
     def __str__(self):
-        return f"type={self.type} lexeme={self.lexeme} literal={self.literal} line#={self.line}"
+        return f"type={self.type} | lexeme={self.lexeme} | literal={self.literal} | line#={self.line}"

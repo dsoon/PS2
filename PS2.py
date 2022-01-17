@@ -1,44 +1,71 @@
-import Scanner
-import Parser
-# import ASTPrinter
-import Interpretor
+from Environment import Environment
+from Scanner import Scanner
+from Parser import Parser
+from Interpretor import Interpretor
 
 class PS2:
     
     hadError = False
 
+    def report(line, where, message):
+         print(f"[line {line}] {where} error: {message}")
+         PS2.hadError = True
+
+    # Run Interpretor from a file
     def runFile(fileName):
         with open(fileName) as file:
             lines = file.readlines()
-            for line in lines:
-                PS2.run(line)
+            PS2.run("".join(lines))
 
+    # Run Interpretor interactively
     def runPrompt():
         while True:
             try:
-                line = input("> ")
-                PS2.run(line)
+
+                lineno = 1
+                prog = []
+                Environment.reset()
+                PS2.hadError = False
+                
+                while True:
+                    try :
+                        line = input(f"{lineno}> ")
+
+                        # . command to run the program
+                        if len(line) == 1 and line[0] == ".":  
+                            PS2.run("".join(prog))
+                            break
+
+                        elif line == ".q":
+                            raise EOFError
+
+                        prog.append(line+'\n')
+                        lineno += 1
+
+                    except SyntaxError as e:
+                        PS2.report(e.msg[0], "Syntax", e.msg[1])
+
+                    except RuntimeError as e:
+                        pass
+
+
             except EOFError: # catches CNTL-D - EOF
-                print("quiting ...")
+                print("Ending session ...")
                 break
 
     def run(source):
-        scanner =  Scanner.Scanner(source)
-        tokens = scanner.scanTokens()
-        
-        '''
-        for t in tokens:
-            print(f"{t}")
-        '''
-        parser = Parser.Parser(tokens)
 
-        #ASTPrinter.ASTPrinter(parser.parse()).print()
-        
-        print(Interpretor.Interpretor(parser.parse()).interpret())
+        try:
+            tokens     = Scanner(source).scanTokens()        
+            statements = Parser(tokens).parse()
+        except SyntaxError as e:
+            PS2.report(e.msg[0], "Syntax", e.msg[1])
 
-    def error(line, message):
-        PS2.report(line, "", message)
+        if not PS2.hadError:
+            try:
+                Interpretor(statements).interpret()
+            except RuntimeError as e:
+                PS2.report(e.args[0][0], "Runtime", e.args[0][1])
+        else:
+            print("Errors need to be fixed before code can be executed")
 
-    def report(line, where, message):
-         print(f"[line {line}] Error {where} : {message}")
-         PS2.hadError = True

@@ -1,0 +1,33 @@
+Data Types
+----------
+COMPLETED
+• INTEGER a whole number
+• REAL a number capable of containing a fractional part, minimum of a single digit, followed by a '.' and another digit, e.g. 0.0
+• STRING a sequence of zero or more characters, delimited by double quotes "
+• BOOLEAN the logical values TRUE and FALSE
+
+TBC
+• CHAR a single character, delimited by single quotes
+• DATE a valid calendar date, defined using the following format DD/MM/YYYY 
+
+Comments
+--------
+Single line comments using //
+
+Key words
+---------
+Keywords are all in uppercase, e.g. INPUT, IF ...
+
+Identifiers
+-----------
+Camel case, beginning with capital letters
+
+Constants
+---------
+Constants are defined using the '=' operator, and the CONSTANT keyword. The type of constant is implied by the literal assigned to it.
+E.g. CONSTANT PI = 3.14
+
+Assignment
+----------
+ONLY variables can be assigned values. These values are expressions.
+Assignment is through the use of '<-' (left arrow)

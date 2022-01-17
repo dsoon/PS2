@@ -1,7 +1,5 @@
 from Token import TokenType as TT
-from Token import Token
-
-import PS2
+from Token import Token, keywords
 
 class Scanner:
     def __init__(self, source):
@@ -35,6 +33,12 @@ class Scanner:
         elif c == "}":
             self.addToken(TT.RIGHT_BRACE)
 
+        elif c == "[":
+            self.addToken(TT.LEFT_BRACK)
+
+        elif c == "]":
+            self.addToken(TT.RIGHT_BRACK)
+
         elif c == ",":
             self.addToken(TT.COMMA)
 
@@ -47,6 +51,9 @@ class Scanner:
         elif c == "+":
             self.addToken(TT.PLUS)
 
+        elif c == "&":
+            self.addToken(TT.AMPERSAND)
+
         elif c == ";":
             self.addToken(TT.SEMICOLON)
 
@@ -55,6 +62,9 @@ class Scanner:
 
         elif c == "*":
             self.addToken(TT.STAR)
+
+        elif c == "'":
+            self.char()
 
         elif c == "!":
             self.addToken(TT.BANG_EQUAL if self.match("=") else TT.BANG)
@@ -68,7 +78,10 @@ class Scanner:
                 self.addToken(TT.LESS_EQUAL)
 
             elif self.match("-"): # matching <- assignment
-                self.addToken(TT.ASSIGNMENT)
+                self.addToken(TT.ASSIGN)
+
+            elif self.match(">"): # matching <> not equal
+                self.addToken(TT.LESS_GREATER)
 
             else: # just <
                 self.addToken(TT.LESS)
@@ -77,7 +90,7 @@ class Scanner:
             self.addToken(TT.GREATER_EQUAL if self.match("=") else TT.GREATER)
 
         elif c == "/":
-            if self.match('/'): # got a slash
+            if self.match('/'): # Ignore comments
                 while self.peek() != "\n" and not self.isAtEnd(): 
                     self.advance()
             else:
@@ -100,7 +113,7 @@ class Scanner:
                 self.identifier()
 
             else:
-                PS2.PS2.error(self.line, f"unrecognised token '{c}'")
+                raise SyntaxError([self.line, f"unrecognised token '{c}'"])
     
     def match(self, expected):
         if self.isAtEnd():
@@ -112,14 +125,12 @@ class Scanner:
         self.current += 1
         return True
 
-
     def addToken(self, *args, **kwargs):
         if len(args) == 1:
             self.addToken(args[0], None)
 
         elif len(args) == 2: #length == 2
             self.tokens.append(Token(args[0], self.source[self.start:self.current], args[1], self.line))
-
 
     def advance(self):
         c = self.source[self.current]
@@ -149,14 +160,29 @@ class Scanner:
             self.advance()
 
         if self.isAtEnd():
-            PS2.PS2.error(self.line, "unterminated string")
-            return
+            raise SyntaxError ([self.line, "unterminated string"])
 
         self.advance() # closing "
         # trim surrounding string
 
         value = self.source[self.start + 1 : self.current -1]
         self.addToken(TT.STRING, value)
+
+
+    def char(self):
+        value = ""
+        if not self.isAtEnd():
+            if self.peek() != "'":
+                value = self.peek()
+                self.advance()
+            if self.peek() != "'":
+                raise SyntaxError ([self.line, f"expected ' after {value}"])        
+            else:
+                self.advance()
+        else:
+            raise SyntaxError ([self.line, "unterminated character"])
+
+        self.addToken(TT.QUOTE, value)
 
     def number(self):
         
@@ -181,8 +207,8 @@ class Scanner:
             self.advance()
 
         identifier = self.source[self.start:self.current]
-        if identifier in Token.keywords:
-            self.addToken(Token.keywords[identifier])
+        if identifier in keywords:
+            self.addToken(keywords[identifier])
         else:    
             self.addToken(TT.IDENTIFIER, identifier)
         
