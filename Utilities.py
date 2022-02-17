@@ -9,3 +9,6 @@ def isChar(expr):
 
 def isBoolean(expr):
     return type (expr) in [bool]
+
+class Return(Exception):
+    pass

@@ -13,9 +13,12 @@ class PS2:
 
     # Run Interpretor from a file
     def runFile(fileName):
-        with open(fileName) as file:
-            lines = file.readlines()
-            PS2.run("".join(lines))
+        try:
+            with open(fileName) as file:
+                lines = file.readlines()
+                PS2.run("".join(lines))
+        except FileNotFoundError:
+            print(f"Error: script '{fileName}' does not exist")
 
     # Run Interpretor interactively
     def runPrompt():
@@ -35,6 +38,10 @@ class PS2:
                         if len(line) == 1 and line[0] == ".":  
                             PS2.run("".join(prog))
                             break
+                        
+                        elif line.startswith(".run"):
+                            PS2.runFile(line[4:].strip())
+                            lineno = 0
 
                         elif line == ".q":
                             raise EOFError
@@ -68,4 +75,5 @@ class PS2:
                 PS2.report(e.args[0][0], "Runtime", e.args[0][1])
         else:
             print("Errors need to be fixed before code can be executed")
+            PS2.hadError = False
 

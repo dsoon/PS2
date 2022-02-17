@@ -1,40 +1,84 @@
 class Environment:
 
     global_variables = {}
+    scopes = [] # stack of Environments
 
     def __init__(self):
         self.variables = {}
 
-    def add_variable(self, vname, vtype):
-        pass
+    def push(env):
+        Environment.scopes.insert(0, env)
+
+    def pop():
+        Environment.scopes.pop(0)
 
     def add_variable(symbol):
 
-        # Check that the variable hasn't already been declared 
-        if symbol.vname in Environment.global_variables:
-            raise NameError(f"Variable '{symbol.vname}' already declared")
-
+        # Get current scope
+        scope = Environment.global_variables
+        if len(Environment.scopes) != 0:
+            scope = Environment.scopes[0].variables
+            
+        if symbol.vname not in scope:
+            scope[symbol.vname] = symbol
         else:
-            Environment.global_variables[symbol.vname] = symbol
+            pass # symbol was previously defined ... skip
 
     def get_variable(vname):
 
-        # Check is the variable has been declared
-        if vname not in Environment.global_variables:
+        symbol = None
+
+        if len(Environment.scopes) != 0:
+            for i in range(len(Environment.scopes)):
+                scope = Environment.scopes[i].variables
+                
+                if vname in scope:
+                    symbol = scope[vname]
+                    break
+
+            if symbol == None and vname in Environment.global_variables: # check to see if it's a global
+                symbol = Environment.global_variables[vname]
+
+        else:
+            if vname in Environment.global_variables:
+                symbol = Environment.global_variables[vname]
+
+        if symbol == None:
             raise NameError(f"Variable '{vname}' not declared")
         else:
-            return Environment.global_variables[vname] 
+            return symbol
+
+
+    def symbol_defined(vname):
+
+       # Get current scope
+        scope = Environment.global_variables
+        if len(Environment.scopes) != 0:
+            scope = Environment.scopes[0].variables
+
+        return vname in scope
 
     def reset():
-        Environment.global_variables = {}
 
-    def dump_global_variables():
+        # Get current scope
+        scope = Environment.global_variables
+        if len(Environment.scopes) != 0:
+            scope = Environment.scopes[0].variables
 
-        keys=Environment.global_variables.keys()
-        print("Global variables:")
+        scope = {}
+
+    def dump_variables():
+
+       # Get current scope
+        scope = Environment.global_variables
+        if len(Environment.scopes) != 0:
+            scope = Environment.scopes[0].variables
+
+        keys=scope.keys()
+        print("Variables:")
         if keys != None:
             for k in keys:
-                print(f"{Environment.global_variables[k]}")
+                print(f"{scope[k]}")
 
 class Symbol:
     def __init__(self, vname, vtype, value=None):
@@ -53,3 +97,19 @@ class Array_Symbol(Symbol):
 
     def __str__(self):
         return f"Array symbol name={self.vname} | type={self.vtype} | start={self.s_idx} | end={self.e_idx} value={self.value}"
+
+class Function_Symbol(Symbol):
+    def __init__(self, name, args, rtype, stmt_list, line):
+        Symbol.__init__(self, name, rtype)
+        self.args = args
+        self.rtype = rtype
+        self.stmt_list = stmt_list
+        self.line = line
+
+    def __str__(self):
+        return f"Function symbol name={self.vname} | returns={self.vtype} | args={self.args} | statement_list={self.stmt_list}"
+
+class Return_Symbol(Symbol):
+    def __init__(self, value):
+        self.vname = "__return__"
+        self.value = value

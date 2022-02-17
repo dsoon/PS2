@@ -88,17 +88,41 @@ class IF_Statement(Statement):
         self.statement_list = statement_list
         self.line = line
 
+class IF_ELSE_Statement(Statement):
+    def __init__(self, condition, statement_list, else_statement_list, line):
+        assert condition != None and statement_list != None and else_statement_list != None and line != None, "IF_ELSE_Statement: None initialiser(s) found"
+
+        self.condition = condition
+        self.statement_list = statement_list
+        self.else_statement_list = else_statement_list
+        self.line = line
+
+
 class CASE_Statement(Statement):
     def __init__(self):
         assert False, "CASE_Statement: Note implemented"
 
 class FUNCTION_DECL_Statement(Statement):
-    def __init__(self, name, statement_list, rtype, line):
+    def __init__(self, name, args, statement_list, rtype, line):
         assert name != None and statement_list != None and rtype != None and line != None, "FUNCTION_DECL_Statement: None initialiser(s) found"
 
+        # self.args can be None - this represents a procedure that takes no arguments
+
         self.name = name
-        self.statement_list = statement_list
+        self.args = args
+        self.stmt_list = statement_list
         self.rtype = rtype
+        self.line = line
+
+class PROC_DECL_Statement(Statement):
+    def __init__(self, name, args, statement_list, line):
+        assert name != None and statement_list != None and line != None, "PROC_DECL_Statement: None initialiser(s) found"
+
+        # self.args can be None - this represents a procedure that takes no arguments
+
+        self.name = name
+        self.args = args
+        self.statement_list = statement_list
         self.line = line
 
 class PROC_Statement(Statement):
@@ -108,3 +132,11 @@ class PROC_Statement(Statement):
         self.name = name
         self.args = args
         self.line = line
+
+
+class RETURN_Statement(Statement):
+    def __init__(self, expr):
+
+        assert expr != None, "RETURN_Statement expression is empty"
+
+        self.expr = expr
