@@ -1,7 +1,7 @@
-from Environment import Environment
-from Scanner import Scanner
-from Parser import Parser
-from Interpretor import Interpretor
+from environment import Environment
+from scanner import Scanner
+from parser import Parser
+from interpretor import Interpretor
 
 class PS2:
     
@@ -52,7 +52,7 @@ class PS2:
                     except SyntaxError as e:
                         PS2.report(e.msg[0], "Syntax", e.msg[1])
 
-                    except RuntimeError as e:
+                    except RuntimeError:
                         pass
 
 

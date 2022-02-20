@@ -1,9 +1,6 @@
-from Token import TokenType as TT
-from Expression import UNARY_Expr as UE, BINARY_Expr as BE, LITERAL_Expr as LE, \
-GROUPING_Expr as GE, IDENTIFIER_Expr as IE, FUNCTION_Expr as FE, ARRAY_Expr as AE
-
-from Statement import Statement, PRINT_Statement, IF_Statement, IF_ELSE_Statement, WHILE_Statement, \
-REPEAT_Statement, FOR_Statement, DECL_Statement, ASSIGN_Statement, FUNCTION_DECL_Statement, INPUT_Statement, ARRAY_DECL_Statement, PROC_Statement, ARRAY_ASSIGN_Statement, RETURN_Statement, OPENFILE_Statement, CLOSEFILE_Statement, READFILE_Statement, WRITEFILE_Statement
+from token import TokenType as TT
+from expression import LITERAL, IDENTIFIER, ARRAY, BINARY, UNARY, FUNCTION, GROUPING
+from statement import Statement, DECLARE, ASSIGN, DECLARE_ARRAY, DECLARE_FUNCTION, ARRAY_ASSIGN, PRINT, INPUT, IF, IF_ELSE, WHILE, REPEAT, FOR, CALL, OPENFILE, CLOSEFILE, READFILE, WRITEFILE, RETURN
 
 class Parser:
 
@@ -88,11 +85,11 @@ class Parser:
             if not self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing valid type, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
             
-            return ARRAY_DECL_Statement(name, start, end, self.previous(), line)
+            return DECLARE_ARRAY(name, start, end, self.previous(), line)
 
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]) :
-            return DECL_Statement(name, self.previous(), line)
+            return DECLARE(name, self.previous(), line)
 
         else: # Invalid data type found
             raise SyntaxError([self.previous().line, f"Declaration missing valid type, found, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
@@ -128,7 +125,7 @@ class Parser:
         # Now get the function statement block - checks are made inside stmt_block for an empty stmt block or terminator not found 
         stmt_list = self.stmt_block([TT.ENDFUNCTION], line)
 
-        return FUNCTION_DECL_Statement(name, args, stmt_list, rtype, line)
+        return DECLARE_FUNCTION (name, args, stmt_list, rtype, line)
 
     def array_assign_stmt(self, name, line):
         
@@ -138,7 +135,7 @@ class Parser:
         if self.match([TT.RIGHT_BRACK]):
             if self.match([TT.ASSIGN]):
                 expr = self.expression("Array assignment", line)
-                return ARRAY_ASSIGN_Statement(name, index, expr, line)
+                return ARRAY_ASSIGN(name, index, expr, line)
 
             else:
                 SyntaxError([line, f"Missing '<-' while parsing for array assignment"])
@@ -155,7 +152,7 @@ class Parser:
         expr = self.expression("Assignment statement", self.previous().line)
 
         if expr != None:
-            return ASSIGN_Statement(name, expr, line)
+            return ASSIGN(name, expr, line)
 
         else: # Missing an expression
             raise SyntaxError([self.peek().line, f"Assignment missing an expression"] )
@@ -180,7 +177,7 @@ class Parser:
 
             expr_list.append(expr)
         
-        return PRINT_Statement(expr_list, line) 
+        return PRINT (expr_list, line) 
 
     def input_stmt(self, line):
         """
@@ -190,7 +187,7 @@ class Parser:
 
         if self.match([TT.IDENTIFIER]):
             name = self.previous().literal
-            return INPUT_Statement(name, line)
+            return INPUT (name, line)
         else:
             raise SyntaxError([self.previous().line, f"Missing identifier for INPUT"] )
 
@@ -234,9 +231,9 @@ class Parser:
             stmt_list = self.stmt_block([TT.ENDIF, TT.ELSE], line)
             if self.previous().type == TT.ELSE:
                 else_stmt_list = self.stmt_block([TT.ENDIF], line)
-                return IF_ELSE_Statement(expr, stmt_list, else_stmt_list, line)
+                return IF_ELSE (expr, stmt_list, else_stmt_list, line)
             else:
-                return IF_Statement(expr, stmt_list, line)
+                return IF (expr, stmt_list, line)
 
     def while_stmt(self, line):
 
@@ -249,7 +246,7 @@ class Parser:
 
         else:            
             stmt_list = self.stmt_block([TT.ENDWHILE], line)
-            return WHILE_Statement(expr, stmt_list, line)
+            return WHILE (expr, stmt_list, line)
 
 
     def repeat_stmt(self, line):
@@ -260,7 +257,7 @@ class Parser:
         # Get the condition        
         expr = self.expression("REPEAT statement", self.previous().line)
 
-        return REPEAT_Statement(expr, stmt_list, line)
+        return REPEAT (expr, stmt_list, line)
 
     # Function to parse the parameter list for a function or a procedure
     def param_list(self, line):
@@ -307,7 +304,7 @@ class Parser:
             elif self.match([TT.COMMA]):
                 continue
 
-        return PROC_Statement(name, args, line)
+        return CALL (name, args, line)
 
 
     def for_stmt(self, line):
@@ -323,7 +320,7 @@ class Parser:
             else:
                 raise SyntaxError([line, f"FOR Missing '<-'"])
 
-        if not isinstance(assign, ASSIGN_Statement):
+        if not isinstance(assign, ASSIGN):
             raise SyntaxError([line, f"Missing 'identifier <- expression'"])
 
         else:
@@ -346,10 +343,10 @@ class Parser:
                     raise SyntaxError([self.previous().line, f"Expected NEXT followed by an Identifier"])
 
                 else:
-                    return FOR_Statement(assign, end, step, stmt_list, line)
+                    return FOR (assign, end, step, stmt_list, line)
 
     def return_stmt(self, line):
-        return RETURN_Statement(self.expression("RETURN statement", line))
+        return RETURN (self.expression("RETURN statement", line))
 
     def file_handling_stmt(self, line):
 
@@ -361,12 +358,12 @@ class Parser:
             if not self.match([TT.READ, TT.WRITE, TT.APPEND]):
                 raise SyntaxError([line, f"Invalid file mode {self.peek().literal}"])
 
-            return OPENFILE_Statement(expr, self.previous().type, line)
+            return OPENFILE (expr, self.previous().type, line)
 
         elif self.previous().type == TT.CLOSEFILE:
             expr = self.expression("CLOSEFILE statement", line)
 
-            return CLOSEFILE_Statement(expr, line)
+            return CLOSEFILE (expr, line)
 
         elif self.previous().type == TT.READFILE:
             file_id = self.expression("READFILE statement", line)
@@ -377,7 +374,7 @@ class Parser:
             if not self.match([TT.IDENTIFIER]):
                 raise SyntaxError([line, f"READFILE: expected an identfier after the comma - got {self.peek().literal}"])
 
-            return READFILE_Statement(file_id, self.previous().literal, line)
+            return READFILE (file_id, self.previous().literal, line)
 
         elif self.previous().type == TT.WRITEFILE:
             file_id = self.expression("WRITEFILE statement", line)
@@ -387,7 +384,7 @@ class Parser:
 
             expr = self.expression("WRITEFILE statement", line)
 
-            return WRITEFILE_Statement(file_id, expr, line)
+            return WRITEFILE (file_id, expr, line)
 
         raise SyntaxError([line, f"Expected file operation {self.previous().literal}"])
 
@@ -456,7 +453,7 @@ class Parser:
         while self.match ( [TT.OR] ):
             operator = self.previous()
             right = self.comparision()
-            expr = BE(expr, operator, right, operator.line)
+            expr = BINARY(expr, operator, right, operator.line)
 
         return expr
 
@@ -465,7 +462,7 @@ class Parser:
         while self.match ( [TT.AND] ):
             operator = self.previous()
             right = self.comparision()
-            expr = BE(expr, operator, right, operator.line)
+            expr = BINARY(expr, operator, right, operator.line)
             
         return expr
 
@@ -474,7 +471,7 @@ class Parser:
         while self.match ( [TT.NOT] ):
             operator = self.previous()
             right = self.comparision()
-            expr = UE(operator, right)
+            expr = UNARY(operator, right)
 
         return expr
 
@@ -484,7 +481,7 @@ class Parser:
         while self.match([TT.GREATER, TT.GREATER_EQUAL, TT.LESS, TT.LESS_EQUAL, TT.LESS_GREATER, TT.BANG_EQUAL, TT.EQUAL, TT.BANG_EQUAL, TT.EQUAL_EQUAL]):
             operator = self.previous()
             right = self.term()
-            expr = BE(expr, operator, right, operator.line)
+            expr = BINARY(expr, operator, right, operator.line)
             
         return expr
 
@@ -497,7 +494,7 @@ class Parser:
             operator = self.previous()
             right = self.factor()
 
-            expr = BE(expr, operator, right, operator.line)
+            expr = BINARY (expr, operator, right, operator.line)
 
         return expr
 
@@ -507,7 +504,7 @@ class Parser:
         while self.match([TT.SLASH, TT.STAR, TT.DIV, TT.MOD] ):
             operator = self.previous()
             right = self.unary()
-            expr = BE(expr, operator, right, operator.line)
+            expr = BINARY (expr, operator, right, operator.line)
 
         return expr
 
@@ -515,20 +512,20 @@ class Parser:
         if self.match([TT.BANG, TT.MINUS]):
             operator = self.previous()
             right = self.unary()
-            return UE(operator, right)
+            return UNARY (operator, right)
 
         return self.primary()
 
     def primary(self):
         
         if self.match([TT.FALSE]): 
-            return LE(False)
+            return LITERAL (False)
 
         elif self.match([TT.TRUE]): 
-            return LE(True)
+            return LITERAL(True)
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.QUOTE]):
-            return LE(self.previous().literal)
+            return LITERAL(self.previous().literal)
 
         elif self.match([TT.IDENTIFIER]):
 
@@ -542,23 +539,23 @@ class Parser:
                     args.append(self.expression("FUNCTION", self.peek().line))
                     self.match([TT.COMMA]) # consume a comma, if there is one
                     
-                return FE(name, args, line)
+                return FUNCTION (name, args, line)
 
             elif self.match([TT.LEFT_BRACK]): # check if it's an array identifier
                 index = self.expression("ARRAY", line)
                 
                 if self.match([TT.RIGHT_BRACK]):
-                    return AE(name, index, line)
+                    return ARRAY(name, index, line)
                 else:
                     raise SyntaxError(line, f"array {name} missing ']'")
             else:
-                return IE(name)
+                return IDENTIFIER(name)
 
         elif self.match([TT.LEFT_PAREN]):
             expr = self.expression("( ... )", self.previous().line)
 
             if self.match([TT.RIGHT_PAREN]):
-                return GE(expr)
+                return GROUPING(expr)
 
             else:
                 raise SyntaxError([self.peek().line, "Missing closing ')'"])
