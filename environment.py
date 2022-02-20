@@ -83,13 +83,9 @@ class Environment:
 
     def reset():
 
-        # Get current scope
-        scope = Environment.global_variables
-        if len(Environment.scopes) != 0:
-            scope = Environment.scopes[0].variables
-
-        scope = {}
-
+        Environment.global_variables = {}
+        Environment.scopes = []
+        
     def dump_variables():
 
        # Get current scope

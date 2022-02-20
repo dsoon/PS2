@@ -51,9 +51,10 @@ class PS2:
 
                     except SyntaxError as e:
                         PS2.report(e.msg[0], "Syntax", e.msg[1])
+                        PS2.hadError = False
 
                     except RuntimeError:
-                        pass
+                        PS2.hadError = False
 
 
             except EOFError: # catches CNTL-D - EOF
