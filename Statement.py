@@ -140,3 +140,41 @@ class RETURN_Statement(Statement):
         assert expr != None, "RETURN_Statement expression is empty"
 
         self.expr = expr
+
+class OPENFILE_Statement(Statement):
+    def __init__(self, handle, mode, line):
+        self.handle = handle
+        self.mode = mode
+        self.line = line
+
+    def __str__(self):
+        return f"OPENFILE_Statement: {self.handle} {self.mode} on line {self.line}"
+
+class CLOSEFILE_Statement(Statement):
+    def __init__(self, handle, line):
+        self.handle = handle
+        self.line = line
+
+    def __str__(self):
+        return f"CLOSEFILE_Statement: {self.handle} on line {self.line}"
+
+
+class READFILE_Statement(Statement):
+    def __init__(self, handle, variable, line):
+        self.handle = handle
+        self.variable = variable
+        self.line = line
+
+    def __str__(self):
+        return f"READFILE_Statement: {self.handle} {self.variable} on line {self.line}"
+
+class WRITEFILE_Statement(Statement):
+    def __init__(self, handle, value, line):
+        self.handle = handle
+        self.value = value
+        self.line = line
+
+    def __str__(self):
+        return f"WRITEFILE_Statement: {self.handle} {self.variable} on line {self.line}"
+    
+

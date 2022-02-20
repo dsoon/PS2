@@ -124,7 +124,7 @@ class TokenType(enum.Enum):
 
     # Built in functions
 
-    EOF = "EOF"
+    AT_EOF = "AT_EOF"
   
 keywords = {
 
@@ -193,7 +193,7 @@ keywords = {
     "MOD": TokenType.MOD,
     "DIV": TokenType.DIV,
 
-    "EOF": TokenType.EOF,
+    "AT_EOF": TokenType.AT_EOF,
 
 }
     

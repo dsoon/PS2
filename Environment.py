@@ -48,6 +48,29 @@ class Environment:
         else:
             return symbol
 
+    def remove_variable(vname):
+
+        found = False
+
+        if len(Environment.scopes) != 0:
+            for i in range(len(Environment.scopes)):
+                scope = Environment.scopes[i].variables
+                
+                if vname in scope:
+                    del scope[vname]
+                    found = True
+                    break
+
+            if not found and vname in Environment.global_variables: # check to see if it's a global
+                del Environment.global_variables[vname]
+
+        else:
+            if vname in Environment.global_variables:
+                del Environment.global_variables[vname]
+                found = True
+
+        if not found:
+            raise NameError(f"Variable '{vname}' not declared")
 
     def symbol_defined(vname):
 
@@ -98,6 +121,13 @@ class Array_Symbol(Symbol):
     def __str__(self):
         return f"Array symbol name={self.vname} | type={self.vtype} | start={self.s_idx} | end={self.e_idx} value={self.value}"
 
+class File_Symbol(Symbol):
+    def __init__(self, name, mode, _fileid):
+        Symbol.__init__(self, name, None)
+        self.mode = mode
+        self._fileid = _fileid
+        self.isEOF = False
+
 class Function_Symbol(Symbol):
     def __init__(self, name, args, rtype, stmt_list, line):
         Symbol.__init__(self, name, rtype)
@@ -109,7 +139,7 @@ class Function_Symbol(Symbol):
     def __str__(self):
         return f"Function symbol name={self.vname} | returns={self.vtype} | args={self.args} | statement_list={self.stmt_list}"
 
-class Return_Symbol(Symbol):
-    def __init__(self, value):
-        self.vname = "__return__"
-        self.value = value
+#class Return_Symbol(Symbol):
+#    def __init__(self, value):
+#        self.vname = "__return__"
+#        self.value = value

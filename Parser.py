@@ -3,7 +3,7 @@ from Expression import UNARY_Expr as UE, BINARY_Expr as BE, LITERAL_Expr as LE, 
 GROUPING_Expr as GE, IDENTIFIER_Expr as IE, FUNCTION_Expr as FE, ARRAY_Expr as AE
 
 from Statement import Statement, PRINT_Statement, IF_Statement, IF_ELSE_Statement, WHILE_Statement, \
-REPEAT_Statement, FOR_Statement, DECL_Statement, ASSIGN_Statement, FUNCTION_DECL_Statement, INPUT_Statement, ARRAY_DECL_Statement, PROC_Statement, ARRAY_ASSIGN_Statement, RETURN_Statement
+REPEAT_Statement, FOR_Statement, DECL_Statement, ASSIGN_Statement, FUNCTION_DECL_Statement, INPUT_Statement, ARRAY_DECL_Statement, PROC_Statement, ARRAY_ASSIGN_Statement, RETURN_Statement, OPENFILE_Statement, CLOSEFILE_Statement, READFILE_Statement, WRITEFILE_Statement
 
 class Parser:
 
@@ -27,7 +27,7 @@ class Parser:
             self.current -= 1
 
     def sync(self, *argv):
-        while self.peek().type != TT.EOF and self.peek().type not in Statement.valid_statements:
+        while self.peek().type != TT.AT_EOF and self.peek().type not in Statement.valid_statements:
             self.advance() # throw away tokens
 
     def previous(self):
@@ -37,7 +37,7 @@ class Parser:
             raise RuntimeError([self.tokens[self.current].line, "Internal: Call to Parser.previous without previous token"])
 
     def isAtEnd(self):
-        return self.peek().type == TT.EOF            
+        return self.peek().type == TT.AT_EOF            
 
     def parse(self):
         stmt_list = []
@@ -351,6 +351,46 @@ class Parser:
     def return_stmt(self, line):
         return RETURN_Statement(self.expression("RETURN statement", line))
 
+    def file_handling_stmt(self, line):
+
+        if self.previous().type == TT.OPENFILE:
+            expr = self.expression("OPENFILE statement", line)
+
+            if not self.match([TT.FOR]):
+                raise SyntaxError([line, f"Missing FOR for OPENFILE"])                 
+            if not self.match([TT.READ, TT.WRITE, TT.APPEND]):
+                raise SyntaxError([line, f"Invalid file mode {self.peek().literal}"])
+
+            return OPENFILE_Statement(expr, self.previous().type, line)
+
+        elif self.previous().type == TT.CLOSEFILE:
+            expr = self.expression("CLOSEFILE statement", line)
+
+            return CLOSEFILE_Statement(expr, line)
+
+        elif self.previous().type == TT.READFILE:
+            file_id = self.expression("READFILE statement", line)
+
+            if not self.match([TT.COMMA]):
+                raise SyntaxError([line, f"READFILE: expected a comma after the file id - got {self.peek().literal}"])
+
+            if not self.match([TT.IDENTIFIER]):
+                raise SyntaxError([line, f"READFILE: expected an identfier after the comma - got {self.peek().literal}"])
+
+            return READFILE_Statement(file_id, self.previous().literal, line)
+
+        elif self.previous().type == TT.WRITEFILE:
+            file_id = self.expression("WRITEFILE statement", line)
+         
+            if not self.match([TT.COMMA]):
+                raise SyntaxError([line, f"Expected a comma after the file id - got {self.peek().literal}"])
+
+            expr = self.expression("WRITEFILE statement", line)
+
+            return WRITEFILE_Statement(file_id, expr, line)
+
+        raise SyntaxError([line, f"Expected file operation {self.previous().literal}"])
+
     def statement(self):
 
         if self.match([TT.DECLARE]):
@@ -394,6 +434,9 @@ class Parser:
 
         elif self.match([TT.RETURN]):
             return self.return_stmt(self.previous().line)
+
+        elif self.match([TT.OPENFILE, TT.CLOSEFILE, TT.READFILE, TT.WRITEFILE]):
+            return self.file_handling_stmt(self.previous().line)
 
         else:
             self.advance()

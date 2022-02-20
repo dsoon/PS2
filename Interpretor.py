@@ -3,10 +3,11 @@ from Statement import PRINT_Statement as PS, IF_Statement as IS, IF_ELSE_Stateme
                       ARRAY_DECL_Statement as ADS, ASSIGN_Statement as AS, ARRAY_ASSIGN_Statement as AAS,REPEAT_Statement as RS, FOR_Statement as FS, \
                       INPUT_Statement as IPS, PROC_Statement as PRS, \
                       FUNCTION_DECL_Statement as FDS, RETURN_Statement as RST
+from Statement import OPENFILE_Statement, CLOSEFILE_Statement, READFILE_Statement, WRITEFILE_Statement
 
 import Expression
 
-from Environment import Environment as environ, Symbol as Sym, Array_Symbol as ASym, Function_Symbol as FSym, Return_Symbol as RtnSym
+from Environment import Environment as environ, Symbol as Sym, Array_Symbol as ASym, Function_Symbol as FSym, File_Symbol as FileSym
 
 import Utilities as util
 
@@ -174,6 +175,72 @@ class Interpretor:
                     elif isinstance(stmt, RST): # Return statement from function
                         raise util.Return(self.visitNode(stmt.expr))
 
+                    elif isinstance(stmt, OPENFILE_Statement):
+                        name = self.visitNode(stmt.handle)
+
+                        mode = None
+                        if stmt.mode == TT.READ:
+                            mode = "r"
+
+                        elif stmt.mode == TT.WRITE:
+                            mode = "w"
+
+                        elif stmt.mode == TT.APPEND:
+                            mode = "a"
+
+                        else:
+                            raise RuntimeError([stmt.line, f"OPENFILE - unrecognised mode '{stmt.mode}'"])
+
+                        try:
+                            file_id = open(name, mode)
+                        except Exception as e:
+                            raise RuntimeError([stmt.line, f"unexpected error while executing OPENFILE {e}"])
+
+                        environ.add_variable(FileSym(name, mode,file_id))
+
+                    elif isinstance(stmt, CLOSEFILE_Statement):
+
+                        name = self.visitNode(stmt.handle)
+
+                        handle = environ.get_variable(name)
+
+                        try:
+                            handle._fileid.close()
+
+                        except Exception as e:
+                            raise RuntimeError([stmt.line, f"unexpected error while executing CLOSEFILE {e}"])
+
+                        environ.remove_variable(handle.vname)
+
+                    elif isinstance(stmt, READFILE_Statement):
+                        name = self.visitNode(stmt.handle)
+                        symbol = environ.get_variable(name)
+                        handle = symbol._fileid
+
+                        variable = environ.get_variable(stmt.variable) 
+
+                        try:
+                            line = handle.readline()
+
+                            variable.value = line.strip()
+
+                        except Exception as e:
+                            raise RuntimeError([stmt.line, f"unexpected error while executing READFILE {e}"])
+
+                    elif isinstance(stmt, WRITEFILE_Statement):
+                        name = self.visitNode(stmt.handle)
+                        symbol = environ.get_variable(name)
+                        handle = symbol._fileid
+
+                        value = self.visitNode(stmt.value) 
+
+                        try:
+                            print(f"got '{value}'")
+                            handle.writelines([str(value)+"\n"])
+
+                        except Exception as e:
+                            raise RuntimeError([stmt.line, f"unexpected error while executing WRITEFILE {e}"])
+
                 except NameError as ne:
                     raise RuntimeError([stmt.line, f"{ne}"])
     
@@ -273,6 +340,10 @@ class Interpretor:
             right  = self.visitNode(expr.right)
             if expr.operator.lexeme == '-':
                 return -right
+            elif expr.operator.lexeme == 'NOT':
+                return not right
+            else:
+                raise RuntimeError([expr.line, f"Internal error - unknown unary operator {expr.operator.lexeme}"])
 
         elif isinstance(expr, Expression.ARRAY_Expr):
 
@@ -382,6 +453,26 @@ class Interpretor:
 
                     return char.lower()
 
+
+            elif expr.name == "EOF":
+                    if len(expr.args) != 1:
+                        raise RuntimeError([expr.line, f"EOF() function requires 1 argument, it received {len(expr.args)}"])
+
+                    fileid  = self.visitNode(expr.args[0])
+                    symbol = environ.get_variable(fileid)
+
+                    try:
+                        file_handle = symbol._fileid
+                        ch = file_handle.read(1)
+                        if ch == "": # Reached the end of file
+                            symbol.isEOF = True
+                        else: # return the charcter back to the file
+                            file_handle.seek(file_handle.tell()-1)
+
+                    except Exception as e:
+                        raise RuntimeError([expr.line, f"un expected exception while checking for EOF - {e}"])
+
+                    return symbol.isEOF
 
             elif expr.name == "DEBUG":
 

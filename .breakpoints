@@ -1,18 +1,3 @@
 {
-  "files": {
-    "Parser.py": [
-      {
-        "id": "0d26a306-2ffd-4a32-b1c6-9f7435cab4f8",
-        "line": 169,
-        "version": 11677,
-        "index": 6998
-      },
-      {
-        "id": "f4744529-267a-4bd3-82fb-f93ae32b0ec9",
-        "line": 171,
-        "version": 11677,
-        "index": 7093
-      }
-    ]
-  }
+  "files": {}
 }
