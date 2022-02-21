@@ -150,7 +150,7 @@ class PRINT ( Statement ):
             if type(value) is bool: # Ensure Python True and False are in uppercase 
                 value = str(value).upper()
 
-            print (value, end="") 
+            print (value, end=" ") 
             
         print()
 

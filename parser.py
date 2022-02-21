@@ -8,6 +8,14 @@ class Parser:
         self.tokens = tokens
         self.current = 0
 
+    def match(self, tokens):
+
+        if self.peek().type in tokens:
+            self.advance()
+            return True
+
+        return False
+
     def peek(self):
         return self.tokens[self.current]
 
@@ -157,25 +165,34 @@ class Parser:
         else: # Missing an expression
             raise SyntaxError([self.peek().line, f"Assignment missing an expression"] )
 
+    def expr_list( self, delimiter=TT.COMMA ): # parse a delimited list of expressions  
+ 
+        expr_list = []
+
+        expr = self.expression("expression list", self.previous().line)
+
+        while expr is not None:
+
+            expr_list.append(expr)
+
+            if self.peek().type != TT.COMMA:
+                break
+            else:
+                self.advance()
+
+            expr = self.expression("expression list", self.previous().line)
+
+        return expr_list  
 
     def print_stmt(self, line):
         """
         Function to parse a PRINT statement, e.g. PRINT 4 + 3
-        supports an expression list, i.e. PRINT 1, 2, 3
+        also supports an expression list, i.e. PRINT 1, 2, 3
         """
-        expr_list = []
-        expr = self.expression("Print statement", self.previous().line)
-        if expr == None: # Missing expression for PRINT
+        expr_list = self.expr_list()
+
+        if len(expr_list) == 0: # Missing expression for PRINT
             raise SyntaxError([self.previous().line, f"Missing expression for PRINT or OUTPUT"] )
-
-        expr_list.append(expr)
-        while self.peek().type == TT.COMMA:
-            self.advance()
-            expr = self.expression("Print statement", self.previous().line)
-            if expr == None: # Missing expression for PRINT
-                raise SyntaxError([self.previous().line, f"Missing expression for PRINT or OUTPUT"] )
-
-            expr_list.append(expr)
         
         return PRINT (expr_list, line) 
 
@@ -291,7 +308,6 @@ class Parser:
         
         raise SyntaxError(line, f"Unexpected EOF while parsing parameter list")
 
-
     def call_stmt(self, line):
 
         args = []
@@ -396,6 +412,7 @@ class Parser:
 
     def return_stmt(self, line):
         return RETURN (self.expression("RETURN statement", line))
+
 
     def file_handling_stmt(self, line):
 
@@ -589,11 +606,12 @@ class Parser:
 
             # check if this is a variable or a function identifer
             if self.match([TT.LEFT_PAREN]): # found a function
-                args = []
-                while not self.match([TT.RIGHT_PAREN]):
-                    args.append(self.expression("FUNCTION", self.peek().line))
-                    self.match([TT.COMMA]) # consume a comma, if there is one
-                    
+
+                args = self.expr_list()
+
+                if not self.match([TT.RIGHT_PAREN]):
+                    raise SyntaxError([line, f"function missing closing ')' "])
+
                 return FUNCTION (name, args, line)
 
             elif self.match([TT.LEFT_BRACK]): # check if it's an array identifier
@@ -616,11 +634,3 @@ class Parser:
                 raise SyntaxError([self.peek().line, "Missing closing ')'"])
 
         return None
-
-    def match(self, tokens):
-
-        if self.peek().type in tokens:
-            self.advance()
-            return True
-
-        return False

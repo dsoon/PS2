@@ -221,7 +221,7 @@ class FUNCTION(Expression):
 
         elif self.name == "LENGTH":
             if len(self.args) != 1:
-                raise RuntimeError([self.line, f"LENGTH() function requires 2 arguments, it received {len(self.args)}"])
+                raise RuntimeError([self.line, f"LENGTH() function expected 1 argument, it got {len(self.args)}"])
             this_string = self.args[0].evaluate()
 
             # Check that this is a string
@@ -241,7 +241,7 @@ class FUNCTION(Expression):
                 raise RuntimeError([self.line, f"MID() requires a STRING, not '{this_string}'"])    
 
             start = self.args[1].evaluate()
-            x     = self.args[2].evaluate()
+            x     = self.args[2].evaluate() - 1
 
             if type(start) == int and type(x) == int:
 
