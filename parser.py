@@ -89,7 +89,7 @@ class Parser:
 
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]) :
-            return DECLARE(name, self.previous(), line)
+            return DECLARE(name, self.previous(), line, False)
 
         else: # Invalid data type found
             raise SyntaxError([self.previous().line, f"Declaration missing valid type, found, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
@@ -292,12 +292,22 @@ class Parser:
         raise SyntaxError(line, f"Unexpected EOF while parsing parameter list")
 
 
-    def proc_stmt(self, name, line):
+    def call_stmt(self, line):
 
         args = []
+        name = None
+        
+        if self.match([TT.IDENTIFIER]):            
+            name = self.previous().literal 
+
+        else:
+            raise SyntaxError([line, f"CALL statement expected an identifier, got {self.peek().literal}"])
+
+        if not self.match([TT.LEFT_PAREN]):
+            raise SyntaxError([line, f"CALL statement expected an (, got {self.peek().literal}"])
 
         while not self.isAtEnd():
-            args.append(self.expression("PROC_Statement", line))
+            args.append(self.expression("CALL_Statement", line))
             if self.match([TT.RIGHT_PAREN]):
                 break
 
@@ -307,7 +317,46 @@ class Parser:
         return CALL (name, args, line)
 
 
-    def for_stmt(self, line):
+    def constant_stmt(self, line):
+
+        name = None
+
+        if self.match([TT.IDENTIFIER]):
+            name = self.previous().literal
+
+        else:
+            raise SyntaxError([line, f"CONSTANT missing identifier, got {self.peek().lexeme}"])
+
+        if not self.match([TT.EQUAL]):
+            raise SyntaxError([line, f"CONSTANT missing '=', got {self.peek().lexeme}"])
+
+        value = self.primary()
+
+        if value == None:
+            raise SyntaxError([line, f"CONSTANT missing a value"])
+
+        value = value.expression
+
+        vtype = None
+        if type(value) == str:
+            vtype = TT.STRING
+
+        elif type(value) == bool:
+            vtype = TT.BOOLEAN
+
+        elif type(value) == float:
+            vtype = TT.REAL
+
+        elif type(value) == int:
+            vtype = TT.INTEGER
+
+        else:
+            raise SyntaxError([line, f"CONSTANT doesn't recognise value type"])
+
+        return DECLARE(name, vtype, line, True, value)
+
+
+    def for_stmt(self, line): # CONSTANT <identifier> = <value>
 
         assign = None
         
@@ -399,14 +448,20 @@ class Parser:
             if self.match([TT.ASSIGN]):
                 return self.assign_stmt(name, self.previous().line)
 
-            elif self.match([TT.LEFT_PAREN]):
-                return self.proc_stmt(name, self.previous().line)
+            #elif self.match([TT.LEFT_PAREN]):
+            #    return self.proc_stmt(name, self.previous().line)
 
             elif self.match([TT.LEFT_BRACK]):
                 return self.array_assign_stmt(name, self.previous().line)
 
             else:
                 raise SyntaxError([self.peek().line, f"Unexpected {self.peek().type.name} ('{self.peek().lexeme}') following IDENTIFIER ('{self.previous().lexeme}')"])
+
+        elif self.match([TT.CALL]):
+            return self.call_stmt(self.previous().line)
+
+        elif self.match([TT.CONSTANT]):
+            return self.constant_stmt(self.previous().line)
 
         elif self.match([TT.PRINT, TT.OUTPUT]):
             return self.print_stmt(self.previous().line)
@@ -569,6 +624,3 @@ class Parser:
             return True
 
         return False
-
-
-

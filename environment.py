@@ -104,9 +104,10 @@ class Symbol:
         self.vname  = vname
         self.vtype = vtype
         self.value = value
+        self.is_constant = False
 
     def __str__(self):
-        return f"Symbol name={self.vname} | type={self.vtype} | value={self.value}"
+        return f"Symbol name={self.vname} | type={self.vtype} | value={self.value} is_constant={self.is_constant}"
 
 class Array_Symbol(Symbol):
     def __init__(self, vname, vtype, s_idx, e_idx):

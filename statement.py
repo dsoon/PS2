@@ -39,17 +39,23 @@ class Statement ( abc.ABC ):
 
 class DECLARE ( Statement ):
 
-    def __init__(self, vname, vtype, line):
+    def __init__(self, vname, vtype, line, is_constant, value=None):
         assert vname != None and vtype != None and line != None, \
             "DECLARE statement: None initialiser(s) found"
 
         self.vname = vname
         self.vtype = vtype
         self.line = line
+        self.is_constant = is_constant
+        self.value = value
 
     def interpret(self):
 
-        symbol = Symbol(self.vname, self.vtype)
+        symbol = Symbol(self.vname, self.vtype, self.value)
+
+        if self.is_constant:
+            symbol.is_constant = True
+            
         environ.add_variable(symbol)
 
 
@@ -118,6 +124,9 @@ class ASSIGN ( Statement ):
         value  = self.expr.evaluate()
 
         symbol = environ.get_variable(self.vname)
+        if symbol.is_constant:
+            raise RuntimeError([self.line, f"cannot change a value of a constant '{ self.vname }'"])
+
         symbol.value = value
 
 
@@ -371,7 +380,7 @@ class CALL ( Statement ):
                 arg = self.args[0].evaluate()
 
             if arg == "globals":
-                environ.dump_global_variables()
+                environ.dump_variables()
 
             else:
                 raise RuntimeError([self.line, f"Unrecognised DEBUG parameter {arg}"])
