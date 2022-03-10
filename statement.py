@@ -3,7 +3,7 @@ import utilities as util
 
 from environment import Environment as environ
 from environment import Symbol, Array_Symbol, Function_Symbol, File_Symbol
-from token import TokenType as TT, Token
+from ps2_token import TokenType as TT, Token
 
 
 class Statement ( abc.ABC ):
@@ -49,6 +49,9 @@ class DECLARE ( Statement ):
         self.is_constant = is_constant
         self.value = value
 
+    def __str__(self):
+        return f"DECLARE: name={self.vname}, type={self.vtype}, line={self.line}, constant={self.is_constant}, value={self.value}"
+
     def interpret(self):
 
         symbol = Symbol(self.vname, self.vtype, self.value)
@@ -61,54 +64,87 @@ class DECLARE ( Statement ):
 
 class DECLARE_ARRAY ( Statement ):
 
-    def __init__(self, vname, start, end, vtype, line):
-        assert vname != None and start != None and end != None and vtype != None and line != None,\
+    def __init__(self, vname, dimensions, vtype, line):
+        assert vname != None and dimensions != None and vtype != None and line != None,\
             "ARRAY DECLARATION statement: None initialiser(s) found"
 
         self.vname = vname
         self.vtype = vtype
 
-        self.start = start
-        self.end = end
+        self.dimensions = dimensions
+
+        if len(dimensions) < 1 or len(dimensions) > 2:
+            raise SyntaxError([line, "DECLARE ARRAY can only have 1 or 2 dimensions"])
+
         self.line = line
 
     def interpret(self):
 
-        start = self.start.evaluate()
-        end =   self.end.evaluate()
-                        
-        if start > end or start < 0:
-            raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
+        value = []
+        if len(self.dimensions) == 1:
 
-        symbol = Array_Symbol(self.vname, self.vtype, start, end)
+            start = self.dimensions[0][0]
+            end =   self.dimensions[0][1]
+            
+            if start > end or start < 0:
+                raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
+
+            value = [ None for _ in range( start - end + 1) ]
+
+        elif len(self.dimensions) == 2:
+
+            start = self.dimensions[0][0]
+            end =   self.dimensions[0][1]
+
+            if start > end or start < 0:
+                raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
+
+            value = [ None for _ in range( end- start + 1) ]
+
+            start = self.dimensions[1][0]
+            end =   self.dimensions[1][1]
+
+            if start > end or start < 0:
+                raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
+
+            for i in range(len(value)):
+                value[i] = [ None for _ in range( end - start + 1) ]
+
+        else:
+            raise SyntaxError([self.line, f"unsupported dimensions {len(self.dimensions)} - only 1D and 2D supported"])
+
+        symbol = Array_Symbol(self.vname, self.dimensions, self.vtype, value)
+
         environ.add_variable(symbol)
 
 
 class ARRAY_ASSIGN ( Statement ):
 
-    def __init__(self, vname, index, expr, line):
-        assert vname != None and index != None and expr != None and line != None, \
+    def __init__(self, vname, indices, expr, line):
+        assert vname != None and indices != None and expr != None and line != None, \
             "ARRAY ASSIGN statement: None initialiser(s) found"
 
         self.vname = vname
-        self.index = index
+        self.indices = indices
         self.expr = expr
         self.line = line
 
     def interpret(self):
 
-        index = self.index.evaluate()
-        expr  = self.expr.evaluate()
-
         symbol = environ.get_variable(self.vname)
-
         if not isinstance(symbol, Array_Symbol):
             raise RuntimeError([self.line, f"symbol {self.vname} is not an array"])
 
-        if index >= symbol.s_idx and index <= symbol.e_idx:
-            symbol.value[index-1] = expr
-        else:
-            raise RuntimeError([self.line, f"{symbol.vname}[{index}], index out of range"])
+        expr  = self.expr.evaluate()
+        assert expr != None, "ARRAY_ASSIGN expr == None"
+
+        index1 = self.indices[0].evaluate()
+        index2 = None
+
+        if not symbol.is1d: # 2D
+            index2 = self.indices[1].evaluate()
+
+        symbol.set_value(self.line, expr, index1, index2)
 
 class ASSIGN ( Statement ):
 
@@ -129,7 +165,27 @@ class ASSIGN ( Statement ):
 
         symbol.value = value
 
+class DECLARE_TYPE(Statement):
+    from enum import Enum
 
+    class TYPE(Enum):
+        COMPOSITE = 1
+        POINTER = 2
+        ENUM = 3
+        
+    def __init__(self, name, t_type, value, line):
+        self.name = name
+        self.t_type = t_type
+        self.value = value
+        self.line = line
+        
+
+    def interpret(self):
+        pass
+
+    def __str__(self):
+        return f"Type name={self.name} Type of {self.t_type} found on line {self.line}"
+    
 class PRINT ( Statement ):
 
     def __init__(self, exprlist, line):
@@ -519,4 +575,3 @@ class WRITEFILE ( Statement ):
 
         except Exception as e:
             raise RuntimeError([self.line, f"unexpected error while executing WRITEFILE {e}"])
-

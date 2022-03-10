@@ -1,7 +1,7 @@
 import abc
 import utilities as util
 
-from token import TokenType as TT
+from ps2_token import TokenType as TT
 from environment import Environment as environ, Symbol
 
 class Expression(abc.ABC):
@@ -149,23 +149,21 @@ class IDENTIFIER(Expression):
         return environ.get_variable(self.name).value
 
 class ARRAY(Expression):
-    def __init__(self, name, index_expression, line):
+    def __init__(self, name, expression_list, line):
         self.name = name
-        self.index_expression = index_expression
+        self.indices = expression_list
         self.line = line
 
     def evaluate(self):
 
-        index = self.index_expression.evaluate()
         symbol = environ.get_variable(self.name)
 
-        if index < symbol.s_idx or index > symbol.e_idx:
-            raise RuntimeError([self.line, f"Array index {index} out of range"])
- 
-        elif symbol.value[index-symbol.s_idx] == None:
-            raise RuntimeError([self.line, f"Array index {self.name}[{index}] not set"])
+        index1 = self.indices[0].evaluate()
+        index2 = None
+        if not symbol.is1d:
+            index2 = self.indices[1].evaluate()
 
-        return symbol.value[index-symbol.s_idx]
+        return symbol.get_value(self.line, index1, index2)
 
 
 

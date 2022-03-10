@@ -1,5 +1,5 @@
-from token import TokenType as TT
-from token import Token, keywords
+from ps2_token import TokenType as TT, Token, keywords
+
 
 class Scanner:
     def __init__(self, source):

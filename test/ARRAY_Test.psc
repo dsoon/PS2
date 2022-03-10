@@ -1,8 +1,0 @@
-DECLARE I : ARRAY [ 1 : 10 ] OF INTEGER
-FOR J <-1 TO 10
-    I[J] <- J+1
-NEXT J
-
-FOR K <-1 TO 10
-    PRINT I[K]
-NEXT K

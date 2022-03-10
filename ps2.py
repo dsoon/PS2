@@ -8,7 +8,7 @@ class PS2:
     hadError = False
 
     def report(line, where, message):
-         print(f"[line {line}] {where} error: {message}")
+         print(f"\n[line {line}] {where} error: {message}")
          PS2.hadError = True
 
     # Run Interpretor from a file

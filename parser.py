@@ -1,6 +1,6 @@
-from token import TokenType as TT
+from ps2_token import TokenType as TT
 from expression import LITERAL, IDENTIFIER, ARRAY, BINARY, UNARY, FUNCTION, GROUPING
-from statement import Statement, DECLARE, ASSIGN, DECLARE_ARRAY, DECLARE_FUNCTION, ARRAY_ASSIGN, PRINT, INPUT, IF, IF_ELSE, WHILE, REPEAT, FOR, CALL, OPENFILE, CLOSEFILE, READFILE, WRITEFILE, RETURN
+from statement import Statement, DECLARE, ASSIGN, DECLARE_ARRAY, DECLARE_FUNCTION, ARRAY_ASSIGN, PRINT, INPUT, IF, IF_ELSE, WHILE, REPEAT, FOR, CALL, OPENFILE, CLOSEFILE, READFILE, WRITEFILE, RETURN, DECLARE_TYPE
 
 class Parser:
 
@@ -66,34 +66,54 @@ class Parser:
             raise SyntaxError([self.previous().line, f"Declaration missing ':', got '{self.peek().lexeme}' instead"])                   
 
         # Now match a valid data type
-        if self.match([TT.ARRAY]):
+        if self.match([TT.ARRAY]): # Found an ARRAY declaration
 
             if not self.match([TT.LEFT_BRACK]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing '[', got '{self.peek().lexeme}' instead"])
-                        
-            start = self.expression("ARRAY Start", line)
 
-            if type(start.expression) != int:
-                raise SyntaxError([self.previous().line, f"ARRAY declaration start index needs to be an integer'"])
 
-            if not self.match([TT.COLON]):
-                raise SyntaxError([self.previous().line, f"ARRAY declaration missing ':', got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
-                            
-            end = self.expression("ARRAY End", line)
 
-            if type(end.expression) != int:
-                raise SyntaxError([self.previous().line, f"ARRAY declaration end index needs to be an integer'"])
+            dimensions = [] # this is an array of tuples [ (a,b), (c,d) .. ], where each tuple is a dimension
+
+            while self.peek().type != TT.RIGHT_BRACK:
+                    
+                # Now get the dimensions of the ARRAY
+                #------------------------------------
+
+                start = self.primary() # start index
+
+                if type(start.expression) != int:
+                    raise SyntaxError([self.previous().line, f"ARRAY declaration start index needs to be an integer'"])
+
+                if not self.match([TT.COLON]):
+                    raise SyntaxError([self.previous().line, f"ARRAY declaration missing ':', got '{self.peek().lexeme}"])
+                                
+                #end = self.expression("ARRAY End", line)
+                end = self.primary()
+
+                if type(end.expression) != int:
+                    raise SyntaxError([self.previous().line, f"ARRAY declaration end index needs to be an integer'"])
+
+                dimensions.append( (start.expression, end.expression) )
+
+                if not self.peek().type == TT.COMMA:
+                    break
+                else:
+                    self.advance()
+
+            #------------------------------------
 
             if not self.match([TT.RIGHT_BRACK]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing ']', got '{self.peek().lexeme}' instead"])
-                                
+
+            # Now get the type of ARRAY                    
             if not self.match([TT.OF]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing 'OF', got '{self.peek().lexeme}' instead"])
                                                                     
             if not self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing valid type, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
             
-            return DECLARE_ARRAY(name, start, end, self.previous(), line)
+            return DECLARE_ARRAY(name, dimensions, self.previous(), line)
 
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]) :
@@ -138,12 +158,14 @@ class Parser:
     def array_assign_stmt(self, name, line):
         
         # Found potential array identifier
-        index = self.expression("Array index", line)
+        #index = self.expression("Array index", line)
+        indices = self.expr_list()
 
         if self.match([TT.RIGHT_BRACK]):
             if self.match([TT.ASSIGN]):
                 expr = self.expression("Array assignment", line)
-                return ARRAY_ASSIGN(name, index, expr, line)
+                
+                return ARRAY_ASSIGN(name, indices, expr, line)
 
             else:
                 SyntaxError([line, f"Missing '<-' while parsing for array assignment"])
@@ -454,6 +476,49 @@ class Parser:
 
         raise SyntaxError([line, f"Expected file operation {self.previous().literal}"])
 
+    def type_stmt(self, line):
+        # They are three type of user defined data types
+        # 
+        if not self.match([TT.IDENTIFIER]):
+            raise SyntaxError([line, f"TYPE expected an identifier, got {self.peek().literal} instead"])
+
+        name = self.previous().literal
+
+        # Check for non-composite types Enum and Pointer
+        if self.match([TT.EQUAL]): # Non-composite
+            # Check if its an Enum or a pointer
+
+            if self.match([TT.LEFT_BRACK]): # Enum type found
+                value = []
+                return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.ENUM, value, line)
+                
+            elif self.match([TT.CAP]): # Pointer type found
+                value = None
+                return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.POINTER, value, line)    
+                
+            else:
+                raise SyntaxError([line, f"unknown type {name} declared"])
+            
+        elif self.match([TT.DECLARE]): # Composite
+
+            value = []
+            
+            value.append(self.declaration_stmt(line))
+
+            while not self.match([TT.ENDTYPE]):
+                
+                if self.match([TT.DECLARE]):
+                    value.append(self.declaration_stmt(line))
+                    
+                else:
+                    raise SyntaxError([line, f"TYPE unexpected DECLARE, got {self.peek().literal} instead"])     
+
+                return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.COMPOSITE, value, line)
+
+        else: # Unknown type
+            raise SyntaxError([line, f"TYPE unexpected value after identifier, {self.peek().literal} instead"])
+        
+    
     def statement(self):
 
         if self.match([TT.DECLARE]):
@@ -476,6 +541,9 @@ class Parser:
 
         elif self.match([TT.CALL]):
             return self.call_stmt(self.previous().line)
+
+        elif self.match([TT.TYPE]):
+            return self.type_stmt(self.previous().line)
 
         elif self.match([TT.CONSTANT]):
             return self.constant_stmt(self.previous().line)
@@ -615,7 +683,7 @@ class Parser:
                 return FUNCTION (name, args, line)
 
             elif self.match([TT.LEFT_BRACK]): # check if it's an array identifier
-                index = self.expression("ARRAY", line)
+                index = self.expr_list()
                 
                 if self.match([TT.RIGHT_BRACK]):
                     return ARRAY(name, index, line)

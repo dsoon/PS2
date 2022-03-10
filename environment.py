@@ -110,14 +110,78 @@ class Symbol:
         return f"Symbol name={self.vname} | type={self.vtype} | value={self.value} is_constant={self.is_constant}"
 
 class Array_Symbol(Symbol):
-    def __init__(self, vname, vtype, s_idx, e_idx):
-        Symbol.__init__(self, vname, vtype, value=[None for _ in range(e_idx-s_idx+1)])
-        self.s_idx = s_idx
-        self.e_idx = e_idx
+    def __init__(self, vname, dimensions, vtype, value):
+
+        Symbol.__init__(self, vname, vtype, value)
+        
+        self.dimensions = dimensions
+        self.is1d = len(dimensions) == 1
+
 
     def __str__(self):
-        return f"Array symbol name={self.vname} | type={self.vtype} | start={self.s_idx} | end={self.e_idx} value={self.value}"
+        return f"Array symbol name={self.vname} | type={self.vtype} | dimensions={self.dimensions} | value={self.value}"
 
+    def in_range(self, index, dim):
+        value = index >= dim[0] and index <= dim[1] 
+        return value
+        
+    def set_value(self, line, value, index1, index2=None):
+        if self.is1d:
+            if index2 != None:
+                raise RuntimeError([line , f"{self.vname} is a 1-D array, but two indexes were given {index1}, {index2}"])
+            else:
+                if not self.in_range(index1, self.dimensions[0]):
+                    raise RuntimeError([line , f"{self.vname} index {index1} out of range"])
+
+                self.value[index1-self.dimensions[0][0]] = value
+        else: # 2-D array
+            if index2 == None:
+                raise RuntimeError([line , f"Array {self.vname} is a 2-D array, but only 1 index was given {index1}"])
+
+            else:
+                if not self.in_range(index1, self.dimensions[0]):
+                    raise RuntimeError([line , f"Array {self.vname}[{index1}] {index1} out of range"])
+
+                elif not self.in_range(index2, self.dimensions[1]):
+                    raise RuntimeError([line , f"Array {self.vname}[{index1}][{index2}] index {index2} out of range"])
+
+                i1 = index1-self.dimensions[0][0]
+                i2 = index2-self.dimensions[1][0]
+
+                self.value[i1][i2] = value
+
+    def get_value(self, line, index1, index2=None):
+        if self.is1d:
+            if index2 != None:
+                raise RuntimeError([line , f"Array {self.vname} is a 1-D array, but two indexes were given {index1}, {index2}"])
+            else:
+                if not self.in_range(index1, self.dimensions[0]):
+                    raise RuntimeError([line , f"Array {self.vname}[{index1}] {index1} out of range"])
+
+                value = self.value[index1-self.dimensions[0][0]]
+                if value == None:
+                    raise RuntimeError([line, f"Array {self.name}[{index1}] declared, but not value assigned"])
+
+                return  value
+
+        else: # 2-D array
+            if index2 == None:
+                raise RuntimeError([line , f"Array {self.vname} is a 2-D array, but only 1 index was given {index1}"])
+
+            else:
+                if not self.in_range(index1, self.dimensions[0]):
+                    raise RuntimeError([line , f"Array {self.vname}[{index1}] {index1} out of range"])
+
+                elif not self.in_range(index2, self.dimensions[1]):
+                    raise RuntimeError([line , f"Array {self.vname}[{index1}][{index2}] {index2} out of range"])
+
+                value = self.value[index1-self.dimensions[0][0]][index2-self.dimensions[1][0]] 
+
+                if value == None:
+                    raise RuntimeError([line, f"Array {self.vname}[{index1}][{index2}] declared, but no value assigned"])
+
+                return  value
+                
 class File_Symbol(Symbol):
     def __init__(self, name, mode, _fileid):
         Symbol.__init__(self, name, None)
@@ -136,7 +200,8 @@ class Function_Symbol(Symbol):
     def __str__(self):
         return f"Function symbol name={self.vname} | returns={self.vtype} | args={self.args} | statement_list={self.stmt_list}"
 
-#class Return_Symbol(Symbol):
-#    def __init__(self, value):
-#        self.vname = "__return__"
-#        self.value = value
+class Type_Symbol(Symbol):
+    def __init__(self, name, details, line):
+        Symbol.__init__(self, name, "UDT")
+        pass    
+    
