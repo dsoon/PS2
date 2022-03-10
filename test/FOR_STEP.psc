@@ -1,3 +1,0 @@
-FOR I <- 0 TO 10 STEP 2
-    PRINT I
-NEXT I

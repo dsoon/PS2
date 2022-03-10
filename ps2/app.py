@@ -1,7 +1,7 @@
-from environment import Environment
-from scanner import Scanner
-from parser import Parser
-from interpretor import Interpretor
+from ps2.symbol_table.environment import Environment
+from ps2.scan.scanner import Scanner
+from ps2.parser.parser import Parser
+from ps2.interpret.interpretor import Interpretor
 
 class PS2:
     
@@ -43,7 +43,7 @@ class PS2:
                             PS2.runFile(line[4:].strip())
                             lineno = 0
 
-                        elif line == ".q":
+                        elif line == ".quit":
                             raise EOFError
 
                         prog.append(line+'\n')
@@ -75,6 +75,5 @@ class PS2:
             except RuntimeError as e:
                 PS2.report(e.args[0][0], "Runtime", e.args[0][1])
         else:
-            print("Errors need to be fixed before code can be executed")
             PS2.hadError = False
 

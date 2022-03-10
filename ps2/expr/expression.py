@@ -1,8 +1,8 @@
 import abc
-import utilities as util
+import ps2.utilities as util
 
-from ps2_token import TokenType as TT
-from environment import Environment as environ, Symbol
+from ps2.scan.ps2_token import TokenType as TT
+from ps2.symbol_table.environment import Environment as environ, Symbol
 
 class Expression(abc.ABC):
     

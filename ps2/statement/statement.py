@@ -1,9 +1,9 @@
 import abc
-import utilities as util
+import ps2.utilities as util
 
-from environment import Environment as environ
-from environment import Symbol, Array_Symbol, Function_Symbol, File_Symbol
-from ps2_token import TokenType as TT, Token
+from ps2.symbol_table.environment import Environment as environ
+from ps2.symbol_table.environment import Symbol, Array_Symbol, Function_Symbol, File_Symbol
+from ps2.scan.ps2_token import TokenType as TT, Token
 
 
 class Statement ( abc.ABC ):
@@ -89,7 +89,7 @@ class DECLARE_ARRAY ( Statement ):
             if start > end or start < 0:
                 raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
 
-            value = [ None for _ in range( start - end + 1) ]
+            value = [ None for _ in range( end - start + 1) ]
 
         elif len(self.dimensions) == 2:
 
