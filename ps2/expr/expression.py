@@ -247,7 +247,7 @@ class FUNCTION(Expression):
                 if start > 0 and start + x <= len(this_string):
                     return this_string[start-1:start+x]
                 else:
-                    RuntimeError([self.line, f"MID() arguments are invalid. Ensure start index > 0, start + x <= LENGTH{this_string}"])
+                    raise RuntimeError([self.line, f"MID() arguments are invalid. Ensure start index > 0, and start + length <= LENGTH(\"{this_string}\")"])
             else:
                 raise RuntimeError([self.line, f"MID() requires 2 integer arguments"])
 
