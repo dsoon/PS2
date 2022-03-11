@@ -1,0 +1,39 @@
+FUNCTION SearchFile(ThisFile: STRING, SearchString: STRING) RETURNS BOOLEAN 
+  DECLARE LineNum: INTEGER 
+  DECLARE ThisLine: STRING 
+  DECLARE Found: BOOLEAN 
+  DECLARE stringLength: INTEGER 
+ 
+  Found <- FALSE 
+
+  stringLength <- LENGTH(SearchString) 
+ 
+  OPENFILE ThisFile FOR READ 
+  IF EOF(ThisFile) THEN  
+    OUTPUT "File is empty" 
+  ELSE 
+    WHILE NOT EOF(ThisFile) AND Found = FALSE DO
+      READFILE ThisFile, ThisLine 
+      IF LENGTH(ThisLine) >= stringLength THEN
+        IF MID(ThisLine, 1, stringLength) = SearchString THEN 
+            Found <- TRUE 
+         ENDIF 
+      ENDIF
+    ENDWHILE 
+  ENDIF 
+
+  CLOSEFILE ThisFile
+
+  RETURN Found 
+ENDFUNCTION
+
+DECLARE MyString: STRING
+DECLARE File : STRING
+File <- "myprogs/myfile"
+MyString <- "Hello"
+
+IF SearchFile(File, MyString) THEN
+    OUTPUT "Found", MyString
+ELSE
+    OUTPUT "Didn't find", MySTring
+ENDIF

@@ -14,7 +14,7 @@ DECLARE Swap : BOOLEAN
 DECLARE I : INTEGER
 
 Swap <- TRUE
-I <- 2
+I <- 9
 
 WHILE Swap = TRUE AND I < 10 DO
 
@@ -29,7 +29,7 @@ WHILE Swap = TRUE AND I < 10 DO
         ENDIF
     NEXT J
 
-    I <- I + 1
+    I <- I - 1
 
 ENDWHILE
 

@@ -580,7 +580,7 @@ class Parser:
             raise SyntaxError([self.previous().line, f"Unexpected token '{self.previous().lexeme}'"])
 
     def expression(self, stmt, line):
-        expr = self.bool_or()
+        expr = self.bool_or(stmt, line)
 
         if expr != None:
             return expr
@@ -588,29 +588,29 @@ class Parser:
         else: # Raise an exception if expression is empty
             raise SyntaxError([line, f"{stmt} missing an expression"])
 
-    def bool_or(self):
-        expr = self.bool_and()
+    def bool_or(self, stmt, line):
+        expr = self.bool_and(stmt, line)
         while self.match ( [TT.OR] ):
             operator = self.previous()
-            right = self.comparision()
+            right = self.expression(stmt, line)
             expr = BINARY(expr, operator, right, operator.line)
 
         return expr
 
-    def bool_and(self):
-        expr = self.bool_not()
+    def bool_and(self,  stmt, line):
+        expr = self.bool_not(stmt, line)
         while self.match ( [TT.AND] ):
             operator = self.previous()
-            right = self.comparision()
+            right = self.expression(stmt, line)
             expr = BINARY(expr, operator, right, operator.line)
             
         return expr
 
-    def bool_not(self):
+    def bool_not(self, stmt, line):
         expr = self.comparision()
         while self.match ( [TT.NOT] ):
             operator = self.previous()
-            right = self.comparision()
+            right = self.expression(stmt, line)
             expr = UNARY(operator, right)
 
         return expr
