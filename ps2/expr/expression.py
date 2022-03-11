@@ -327,5 +327,5 @@ class FUNCTION(Expression):
             return return_val
         
         else:
-            raise RuntimeError([self.line, f"Unecognised internal function '{self.name}()'"])
+            raise RuntimeError([self.line, f"Unrecognised internal function '{self.name}()'"])
 
