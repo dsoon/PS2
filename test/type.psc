@@ -1,0 +1,3 @@
+TYPE TestType
+    DECLARE A : INTEGER
+ENDTYPE

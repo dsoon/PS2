@@ -66,6 +66,7 @@ class PS2:
         try:
             tokens     = Scanner(source).scanTokens()        
             statements = Parser(tokens).parse()
+                
         except SyntaxError as e:
             PS2.report(e.msg[0], "Syntax", e.msg[1])
 

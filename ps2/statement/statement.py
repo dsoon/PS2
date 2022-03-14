@@ -163,7 +163,8 @@ class ASSIGN ( Statement ):
         if symbol.is_constant:
             raise RuntimeError([self.line, f"cannot change a value of a constant '{ self.vname }'"])
 
-        symbol.value = value
+        #symbol.value = value
+        symbol.set_value(value, self.line)
 
 class DECLARE_TYPE(Statement):
     from enum import Enum
@@ -181,7 +182,20 @@ class DECLARE_TYPE(Statement):
         
 
     def interpret(self):
-        pass
+
+        if self.t_type == DECLARE_TYPE.TYPE.COMPOSITE:
+            msg = f"Composite Type: TYPE {self.name} ... ENDTYPE not implemented"
+        
+        elif self.t_type == DECLARE_TYPE.TYPE.POINTER:
+            msg = f"Pointer Type: TYPE {self.name} = ^ <TYPE> not implemented"
+            
+        elif self.t_type == DECLARE_TYPE.TYPE.ENUM:
+            msg = f"Enum Type: TYPE {self.name} = (VALUE1, VLAUE2, ...)not implemented"
+            
+        else:
+            msg = f"Unknown type found: {self.t_type}"
+        
+        raise SyntaxError([self.line, msg])
 
     def __str__(self):
         return f"Type name={self.name} Type of {self.t_type} found on line {self.line}"

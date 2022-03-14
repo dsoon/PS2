@@ -1,3 +1,6 @@
+import ps2.utilities as utilities
+from ps2.scan.ps2_token import TokenType as TT
+
 class Environment:
 
     global_variables = {}
@@ -106,6 +109,22 @@ class Symbol:
         self.value = value
         self.is_constant = False
 
+    def type_match(self, val, line):
+
+        match = utilities.check_type(val, self.vtype.type, line)
+        
+        if not match:
+            raise RuntimeError([line, f"Invalid assignment, cannot assign a {utilities.isType(val)} to a {self.vtype.type}"])
+
+        return True
+
+    
+    def set_value(self, val, line):
+
+        if  self.type_match(val, line):
+                self.value = val
+
+            
     def __str__(self):
         return f"Symbol name={self.vname} | type={self.vtype} | value={self.value} is_constant={self.is_constant}"
 
@@ -132,8 +151,10 @@ class Array_Symbol(Symbol):
             else:
                 if not self.in_range(index1, self.dimensions[0]):
                     raise RuntimeError([line , f"{self.vname} index {index1} out of range"])
-
-                self.value[index1-self.dimensions[0][0]] = value
+                    
+                if self.type_match(value, line):
+                    self.value[index1-self.dimensions[0][0]] = value
+                    
         else: # 2-D array
             if index2 == None:
                 raise RuntimeError([line , f"Array {self.vname} is a 2-D array, but only 1 index was given {index1}"])
@@ -148,7 +169,9 @@ class Array_Symbol(Symbol):
                 i1 = index1-self.dimensions[0][0]
                 i2 = index2-self.dimensions[1][0]
 
-                self.value[i1][i2] = value
+                if self.type_match(value, line):
+                    self.value[i1][i2] = value
+                    
 
     def get_value(self, line, index1, index2=None):
         if self.is1d:

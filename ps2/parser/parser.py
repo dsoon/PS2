@@ -513,7 +513,7 @@ class Parser:
                 else:
                     raise SyntaxError([line, f"TYPE unexpected DECLARE, got {self.peek().literal} instead"])     
 
-                return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.COMPOSITE, value, line)
+            return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.COMPOSITE, value, line)
 
         else: # Unknown type
             raise SyntaxError([line, f"TYPE unexpected value after identifier, {self.peek().literal} instead"])

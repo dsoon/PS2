@@ -139,7 +139,7 @@ class GROUPING(Expression):
         self.expression = expression
 
     def evaluate(self):
-        return self.visitNode(self.expression)
+        return self.expression.evaluate()
 
 class IDENTIFIER(Expression):
     def __init__(self, name):
@@ -300,22 +300,36 @@ class FUNCTION(Expression):
             command  = self.visitNode(self.args[0])
             if command.upper() == "DUMP GLOBALS":
                 environ.dump_global_variables()
-            
+
+        # User defined function
         elif environ.symbol_defined(self.name): # Check if this is a user defined function
             symbol = environ.get_variable(self.name)
 
+            # Create a new environment scope for this function
             environ.push(environ())
 
+            # Add the parameters to the environment
             for i, s in enumerate(symbol.args):
                 id_name = symbol.args[i][0]
                 id_type = symbol.args[i][1]
-                environ.add_variable(Symbol(id_name, id_type , self.args[i].evaluate()))
+                # environ.add_variable(Symbol(id_name, id_type , self.args[i].evaluate())) 
+                
+                # Evaluate the argument and check that it is the required type
+                arg = self.args[i].evaluate()
 
+                if  util.check_type(arg, id_type, self.line) == False:
+                    raise RuntimeError([self.line, f"Function {self.name} with arg='{arg}' doesn't match type {id_type}"])
+                    
+                environ.add_variable(Symbol(id_name, id_type , arg)) 
+                
             try:
+
+                # Run the body of the function, until it returns
                 return_val = None
                 for stmt in symbol.stmt_list:
                     stmt.interpret()
 
+            # Function has returned
             except util.Return as r:
                 return_val = r.args[0]
 
