@@ -1,3 +1,5 @@
+import os
+
 import abc
 import ps2.utilities as util
 
@@ -501,7 +503,10 @@ class OPENFILE( Statement ):
             raise RuntimeError([self.line, f"OPENFILE - unrecognised mode '{self.mode}'"])
 
         try:
-            file_id = open(name, mode)
+            cwd = os.getcwd()
+            file_path = os.path.realpath(os.path.join(cwd, name))
+
+            file_id = open(file_path, mode)
         except Exception as e:
             raise RuntimeError([self.line, f"unexpected error while executing OPENFILE {e}"])
 
