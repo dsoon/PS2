@@ -1,3 +1,5 @@
+import os
+
 from ps2.symbol_table.environment import Environment
 from ps2.scan.scanner import Scanner
 from ps2.parser.parser import Parser
@@ -16,7 +18,17 @@ class PS2:
         try:
             with open(fileName) as file:
                 lines = file.readlines()
+
+                start_dir = os.getcwd()
+
+                given_dir = os.path.dirname(fileName)
+                new_dir   = os.path.realpath(os.path.join(start_dir, given_dir))
+
+                os.chdir(new_dir)
+
                 PS2.run("".join(lines))
+
+                os.chdir(start_dir)
         except FileNotFoundError:
             print(f"Error: script '{fileName}' does not exist")
 
