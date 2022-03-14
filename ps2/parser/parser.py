@@ -598,23 +598,14 @@ class Parser:
         return expr
 
     def bool_and(self,  stmt, line):
-        expr = self.bool_not(stmt, line)
+        expr = self.comparision()
         while self.match ( [TT.AND] ):
             operator = self.previous()
             right = self.expression(stmt, line)
             expr = BINARY(expr, operator, right, operator.line)
             
         return expr
-
-    def bool_not(self, stmt, line):
-        expr = self.comparision()
-        while self.match ( [TT.NOT] ):
-            operator = self.previous()
-            right = self.expression(stmt, line)
-            expr = UNARY(operator, right)
-
-        return expr
-
+    
     def comparision(self):
         expr = self.term()
 
@@ -649,7 +640,7 @@ class Parser:
         return expr
 
     def unary(self):
-        if self.match([TT.BANG, TT.MINUS]):
+        if self.match([TT.BANG, TT.MINUS, TT.NOT]):
             operator = self.previous()
             right = self.unary()
             return UNARY (operator, right)
