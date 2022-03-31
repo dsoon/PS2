@@ -132,7 +132,7 @@ class Parser:
         or FUNCTION IDENTIFIER (A: <type>, B<type>, ... ) RETURNS <type> ENDFUNCTION <- Not implemented yet
         """
 
-        # Now match an idenifier and get it's name
+        # Now match an identifier and get it's name
         if not self.match([TT.IDENTIFIER]):
             raise SyntaxError([self.previous().line, f"Declaration missing an identifier, got '{self.peek().lexeme}' instead"])
 
@@ -663,7 +663,7 @@ class Parser:
             name = self.previous().lexeme
             line = self.previous().line
 
-            # check if this is a variable or a function identifer
+            # check if this is a variable or a function with arguments
             if self.match([TT.LEFT_PAREN]): # found a function
 
                 args = self.expr_list()
@@ -681,6 +681,7 @@ class Parser:
                 else:
                     raise SyntaxError(line, f"array {name} missing ']'")
             else:
+                # check if name is a function without arguments
                 return IDENTIFIER(name)
 
         elif self.match([TT.LEFT_PAREN]):

@@ -3,6 +3,7 @@ from ps2.scan.ps2_token import TokenType as TT, Token, keywords
 class Scanner:
     def __init__(self, source):
         self.start = 0
+        
         self.current = 0
         self.line = 1
 

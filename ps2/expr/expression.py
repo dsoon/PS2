@@ -2,7 +2,7 @@ import abc
 import ps2.utilities as util
 
 from ps2.scan.ps2_token import TokenType as TT
-from ps2.symbol_table.environment import Environment as environ, Symbol
+from ps2.symbol_table.environment import Environment as environ, Symbol, Function_Symbol
 
 class Expression(abc.ABC):
     
@@ -146,7 +146,12 @@ class IDENTIFIER(Expression):
         self.name = name
 
     def evaluate(self):
-        return environ.get_variable(self.name).value
+        v = environ.get_variable(self.name)
+        ### Added code for functions without args, and ()
+        if type(v) == Function_Symbol:
+            return FUNCTION(self.name, [], v.line).evaluate()
+        else:
+            return v.value
 
 class ARRAY(Expression):
     def __init__(self, name, expression_list, line):

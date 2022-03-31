@@ -1,33 +1,11 @@
 {
   "files": {
-    "environment.py": [
-      {
-        "id": "114c68e1-a938-4718-a323-b38f7c4503c6",
-        "line": 145,
-        "version": 1166,
-        "index": 4455
-      }
-    ],
     "ps2/expr/expression.py": [
       {
-        "id": "3a0d4704-010f-4d1a-9fd1-10cee3b440a4",
-        "line": 320,
-        "version": 532,
-        "index": 11162
-      }
-    ],
-    "ps2/parser/parser.py": [
-      {
-        "id": "c73aeb26-9a29-4502-be79-47749dfc3b76",
-        "line": 695,
-        "version": 81,
-        "index": 24304
-      },
-      {
-        "id": "8784e361-e34b-49b0-b7e0-c79b204d8742",
-        "line": 698,
-        "version": 81,
-        "index": 24415
+        "id": "55cf60f1-0183-4495-8ca3-cd1faed7f87f",
+        "line": 149,
+        "version": 598,
+        "index": 4785
       }
     ]
   }
