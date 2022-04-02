@@ -119,6 +119,7 @@ class TokenType(enum.Enum):
 
     CASE="CASE" 
     OF="OF" 
+    BREAK="BREAK"
     OTHERWISE="OTHERWISE" 
     ENDCASE="ENDCASE" 
 
@@ -187,6 +188,7 @@ keywords = {
     "ENDIF": TokenType.ENDIF,
     "CASE": TokenType.CASE,
     "OF": TokenType.OF,
+    "BREAK": TokenType.BREAK,
     "OTHERWISE": TokenType.OTHERWISE,
     "ENDCASE": TokenType.ENDCASE,
 

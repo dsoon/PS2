@@ -128,28 +128,36 @@ class BINARY(Expression):
             raise RuntimeError([self.line, f"Unecognised binary operator '{self.operator.lexeme}'"])
 
 class LITERAL(Expression):
-    def __init__(self, expression):
+    def __init__(self, expression, line):
         self.expression = expression
+        self.line = line
 
     def evaluate(self):
+        if self.expression == None:
+            raise RuntimeError([self.line, "missing expression in literal ()"])
+            
         return self.expression
         
 class GROUPING(Expression):
-    def __init__(self, expression):
+    def __init__(self, expression, line):
         self.expression = expression
+        self.line = line
 
     def evaluate(self):
+        if self.expression == None:
+            raise RuntimeError([self.line, "missing expression in group ()"])
         return self.expression.evaluate()
 
 class IDENTIFIER(Expression):
-    def __init__(self, name):
+    def __init__(self, name, line):
         self.name = name
+        self.line = line
 
     def evaluate(self):
         v = environ.get_variable(self.name)
         ### Added code for functions without args, and ()
         if type(v) == Function_Symbol:
-            return FUNCTION(self.name, [], v.line).evaluate()
+            return FUNCTION(self.name, [], self.line).evaluate()
         else:
             return v.value
 
@@ -346,5 +354,5 @@ class FUNCTION(Expression):
             return return_val
         
         else:
-            raise RuntimeError([self.line, f"Unrecognised internal function '{self.name}()'"])
+            raise RuntimeError([self.line, f"Unrecognised function '{self.name}()'"])
 

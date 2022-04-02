@@ -1,6 +1,6 @@
 from ps2.scan.ps2_token import TokenType as TT
 from ps2.expr.expression import LITERAL, IDENTIFIER, ARRAY, BINARY, UNARY, FUNCTION, GROUPING
-from ps2.statement.statement import Statement, DECLARE, ASSIGN, DECLARE_ARRAY, DECLARE_FUNCTION, ARRAY_ASSIGN, PRINT, INPUT, IF, IF_ELSE, WHILE, REPEAT, FOR, CALL, OPENFILE, CLOSEFILE, READFILE, WRITEFILE, RETURN, DECLARE_TYPE
+from ps2.statement.statement import Statement, DECLARE, ASSIGN, DECLARE_ARRAY, DECLARE_FUNCTION, DECLARE_PROCEDURE, ARRAY_ASSIGN, PRINT, INPUT, IF, IF_ELSE, CASE, WHILE, REPEAT, FOR, CALL, OPENFILE, CLOSEFILE, READFILE, WRITEFILE, RETURN, DECLARE_TYPE
 
 class Parser:
 
@@ -65,13 +65,11 @@ class Parser:
         if not self.match([TT.COLON]):
             raise SyntaxError([self.previous().line, f"Declaration missing ':', got '{self.peek().lexeme}' instead"])                   
 
-        # Now match a valid data type
+        # Now looks for a data type
         if self.match([TT.ARRAY]): # Found an ARRAY declaration
 
             if not self.match([TT.LEFT_BRACK]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing '[', got '{self.peek().lexeme}' instead"])
-
-
 
             dimensions = [] # this is an array of tuples [ (a,b), (c,d) .. ], where each tuple is a dimension
 
@@ -80,7 +78,7 @@ class Parser:
                 # Now get the dimensions of the ARRAY
                 #------------------------------------
 
-                start = self.primary() # start index
+                start = self.primary(line) # start index
 
                 if type(start.expression) != int:
                     raise SyntaxError([self.previous().line, f"ARRAY declaration start index needs to be an integer'"])
@@ -88,13 +86,13 @@ class Parser:
                 if not self.match([TT.COLON]):
                     raise SyntaxError([self.previous().line, f"ARRAY declaration missing ':', got '{self.peek().lexeme}"])
                                 
-                #end = self.expression("ARRAY End", line)
-                end = self.primary()
+                end = self.expression(line)
 
-                if type(end.expression) != int:
-                    raise SyntaxError([self.previous().line, f"ARRAY declaration end index needs to be an integer'"])
+                # if type(end.expression) != int:
+                #     raise SyntaxError([self.previous().line, f"ARRAY declaration end index needs to be an integer'"])
 
-                dimensions.append( (start.expression, end.expression) )
+                # dimensions.append( (start.expression, end.expression) )
+                dimensions.append( (start, end) )
 
                 if not self.peek().type == TT.COMMA:
                     break
@@ -109,18 +107,27 @@ class Parser:
             # Now get the type of ARRAY                    
             if not self.match([TT.OF]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing 'OF', got '{self.peek().lexeme}' instead"])
-                                                                    
+
+
+            # Now get they type of the Variable
             if not self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]):
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing valid type, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
+
+
             
             return DECLARE_ARRAY(name, dimensions, self.previous(), line)
 
 
+
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]) :
+            
             return DECLARE(name, self.previous(), line, False)
 
-        else: # Invalid data type found
-            raise SyntaxError([self.previous().line, f"Declaration missing valid type, found, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
+        else: # It must be a User Defined Type
+            self.advance()
+            return DECLARE(name, self.previous(), line, False)
+
+            
             
 
     def function_decl_stmt(self, line):
@@ -129,7 +136,7 @@ class Parser:
 
         e.g. FUNCTION IDENTIFIER RETURNS <type> ENDFUNCTION
 
-        or FUNCTION IDENTIFIER (A: <type>, B<type>, ... ) RETURNS <type> ENDFUNCTION <- Not implemented yet
+        or FUNCTION IDENTIFIER (A: <type>, B<type>, ... ) RETURNS <type> ENDFUNCTION
         """
 
         # Now match an identifier and get it's name
@@ -155,15 +162,36 @@ class Parser:
 
         return DECLARE_FUNCTION (name, args, stmt_list, rtype, line)
 
+    def procedure_decl_stmt(self, line):
+        """
+        Parse a PROCEDURE declaration, 
+
+        e.g. PROCEDURE IDENTIFIER statements ENDPROCEDURE
+
+        or PROCEDURE IDENTIFIER (A: <type>, B<type>, ... ) statements ENDPROCEDURE
+        """
+
+        # Now match an identifier and get it's name
+        if not self.match([TT.IDENTIFIER]):
+            raise SyntaxError([self.previous().line, f"Declaration missing an identifier, got '{self.peek().lexeme}' instead"])
+
+        name = self.previous().literal
+
+        args = self.param_list(line)
+
+        # Now get the procedure statement block - checks are made inside stmt_block for an empty stmt block or terminator not found 
+        stmt_list = self.stmt_block([TT.ENDPROCEDURE], line)
+
+        return DECLARE_PROCEDURE (name, args, stmt_list, line)
+
+    
     def array_assign_stmt(self, name, line):
-        
-        # Found potential array identifier
-        #index = self.expression("Array index", line)
+
         indices = self.expr_list()
 
         if self.match([TT.RIGHT_BRACK]):
             if self.match([TT.ASSIGN]):
-                expr = self.expression("Array assignment", line)
+                expr = self.expression(line)
                 
                 return ARRAY_ASSIGN(name, indices, expr, line)
 
@@ -174,24 +202,18 @@ class Parser:
             raise SyntaxError([line, f"Unable to match ']' for array assignment"])
 
     def assign_stmt(self, name, line):
-        """
-        Function to parse an assignment statement, e.g. Num <- 42
-        """
 
-        # Now parse the expression
-        expr = self.expression("Assignment statement", self.previous().line)
+        expr = self.expression(self.previous().line)
+        return ASSIGN(name, expr, line)
 
-        if expr != None:
-            return ASSIGN(name, expr, line)
 
-        else: # Missing an expression
-            raise SyntaxError([self.peek().line, f"Assignment missing an expression"] )
-
-    def expr_list( self, delimiter=TT.COMMA ): # parse a delimited list of expressions  
- 
+    def expr_list( self, delimiter=TT.COMMA ): 
+        '''
+            Parse a delimited list of expressions  
+        '''
         expr_list = []
 
-        expr = self.expression("expression list", self.previous().line)
+        expr = self.expression(self.previous().line)
 
         while expr is not None:
 
@@ -202,27 +224,28 @@ class Parser:
             else:
                 self.advance()
 
-            expr = self.expression("expression list", self.previous().line)
+            expr = self.expression(self.previous().line)
 
         return expr_list  
 
     def print_stmt(self, line):
-        """
+        '''
         Function to parse a PRINT statement, e.g. PRINT 4 + 3
         also supports an expression list, i.e. PRINT 1, 2, 3
-        """
+        '''
         expr_list = self.expr_list()
 
-        if len(expr_list) == 0: # Missing expression for PRINT
+        if len(expr_list) == 0: 
+            # Missing expression for PRINT
             raise SyntaxError([self.previous().line, f"Missing expression for PRINT or OUTPUT"] )
         
         return PRINT (expr_list, line) 
 
     def input_stmt(self, line):
-        """
+        '''
         Function to parse an INPUT statement, e.g. INPUT <identifier>
         identifier needs to be pre-declared.
-        """
+        '''
 
         if self.match([TT.IDENTIFIER]):
             name = self.previous().literal
@@ -232,14 +255,14 @@ class Parser:
 
 
     def stmt_block(self, block_terminator, line):
-        """
+        '''
         Function to parse a statement group
 
         :param block_terminator: Indicates the tokens to end a statement group
         :type: TokenType
 
         :return: List
-        """
+        '''
         
         # A list is used to store statements
         stmt_list = []
@@ -261,7 +284,7 @@ class Parser:
         return stmt_list
 
     def if_stmt(self, line):
-        expr = self.expression("IF statement", self.previous().line)
+        expr = self.expression(self.previous().line)
 
         if not self.match([TT.THEN]):
             raise SyntaxError([self.peek().line, f"Expected 'THEN' got '{self.peek().lexeme}'"])
@@ -274,10 +297,41 @@ class Parser:
             else:
                 return IF (expr, stmt_list, line)
 
+    def case_stmt(self, line):
+        
+        if not self.match([TT.OF]):
+            raise SyntaxError([self.peek().line, f"Expected 'OF' got '{self.peek().lexeme}'"])
+
+        line = self.previous().line
+        expr = self.expression(line)
+
+        cases = []
+        while not self.match([TT.ENDCASE]):
+            
+             # allow an empty expression to check for OTHERWISE
+            value = self.expression(line, checkNone=False)
+            if value == None:
+                if self.peek().type != TT.OTHERWISE:
+                    raise SyntaxError([line, "Missing expression while parsing CASE"])
+                else:
+                    self.match([TT.OTHERWISE]);
+            
+            if not self.match([TT.COLON]):
+                raise SyntaxError([self.peek().line, f"expected a : got '{self.peek().lexeme}'"])
+
+            stmt_list = self.stmt_block([TT.BREAK], line)
+
+            if value == None and self.peek().type != TT.ENDCASE:
+                raise SyntaxError([line, "OTHERWISE should be the last CASE value"])
+                
+            cases.append((value, stmt_list))
+        
+        return CASE(expr, cases, line)
+    
     def while_stmt(self, line):
 
         # Get the condition        
-        expr = self.expression("WHILE statement", self.previous().line)
+        expr = self.expression(self.previous().line)
 
         # Now match DO
         if not self.match([TT.DO]):
@@ -294,7 +348,7 @@ class Parser:
         stmt_list = self.stmt_block([TT.UNTIL], line)
 
         # Get the condition        
-        expr = self.expression("REPEAT statement", self.previous().line)
+        expr = self.expression(self.previous().line)
 
         return REPEAT (expr, stmt_list, line)
 
@@ -341,17 +395,19 @@ class Parser:
         else:
             raise SyntaxError([line, f"CALL statement expected an identifier, got {self.peek().literal}"])
 
-        if not self.match([TT.LEFT_PAREN]):
-            raise SyntaxError([line, f"CALL statement expected an (, got {self.peek().literal}"])
+        if self.match([TT.LEFT_PAREN]):
 
-        while not self.isAtEnd():
-            args.append(self.expression("CALL_Statement", line))
-            if self.match([TT.RIGHT_PAREN]):
-                break
-
-            elif self.match([TT.COMMA]):
-                continue
-
+            while not self.isAtEnd():
+                args.append(self.expression(line))
+                if self.match([TT.RIGHT_PAREN]):
+                    break
+    
+                elif self.match([TT.COMMA]):
+                    continue
+        else: # procedure without arguments
+            print
+            
+    
         return CALL (name, args, line)
 
 
@@ -416,12 +472,15 @@ class Parser:
                 raise SyntaxError([line, f"Expected TO, got '{self.peek().lexeme}'"])
 
             else:
-                end = self.expression("FOR statement", self.previous().line)
+                end = self.expression(self.previous().line)
 
+                if end == None:
+                    raise SyntaxError([line, "end expression missing after TO"])
+                    
                 # Check if we have a 'STEP' keyword - this is optional
                 step = None
                 if self.match([TT.STEP]):
-                    step = self.expression("FOR statement STEP", self.previous().line)
+                    step = self.expression(self.previous().line)
 
                 # Get statement block
                 stmt_list = self.stmt_block([TT.NEXT], line)
@@ -433,13 +492,12 @@ class Parser:
                     return FOR (assign, end, step, stmt_list, line)
 
     def return_stmt(self, line):
-        return RETURN (self.expression("RETURN statement", line))
-
+        return RETURN (self.expression(line, checkNone=False))
 
     def file_handling_stmt(self, line):
 
         if self.previous().type == TT.OPENFILE:
-            expr = self.expression("OPENFILE statement", line)
+            expr = self.expression(line)
 
             if not self.match([TT.FOR]):
                 raise SyntaxError([line, f"Missing FOR for OPENFILE"])                 
@@ -449,13 +507,13 @@ class Parser:
             return OPENFILE (expr, self.previous().type, line)
 
         elif self.previous().type == TT.CLOSEFILE:
-            expr = self.expression("CLOSEFILE statement", line)
+            expr = self.expression(line)
 
             return CLOSEFILE (expr, line)
 
         elif self.previous().type == TT.READFILE:
-            file_id = self.expression("READFILE statement", line)
-
+            file_id = self.expression(line)
+                          
             if not self.match([TT.COMMA]):
                 raise SyntaxError([line, f"READFILE: expected a comma after the file id - got {self.peek().literal}"])
 
@@ -465,12 +523,12 @@ class Parser:
             return READFILE (file_id, self.previous().literal, line)
 
         elif self.previous().type == TT.WRITEFILE:
-            file_id = self.expression("WRITEFILE statement", line)
+            file_id = self.expression(line)
          
             if not self.match([TT.COMMA]):
                 raise SyntaxError([line, f"Expected a comma after the file id - got {self.peek().literal}"])
 
-            expr = self.expression("WRITEFILE statement", line)
+            expr = self.expression(line)
 
             return WRITEFILE (file_id, expr, line)
 
@@ -490,6 +548,7 @@ class Parser:
 
             if self.match([TT.LEFT_BRACK]): # Enum type found
                 value = []
+
                 return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.ENUM, value, line)
                 
             elif self.match([TT.CAP]): # Pointer type found
@@ -527,12 +586,21 @@ class Parser:
         elif self.match([TT.IDENTIFIER]):
 
             name = self.previous().literal
+            
             if self.match([TT.ASSIGN]):
                 return self.assign_stmt(name, self.previous().line)
 
-            #elif self.match([TT.LEFT_PAREN]):
-            #    return self.proc_stmt(name, self.previous().line)
+            elif self.match([TT.DOT]): # Composite data
 
+                if not self.match([TT.IDENTIFIER]):
+                    raise SyntaxError([self.peek().line, f"expected identifier after '.', got {self.peek().type}"])
+                dotname = name+"."+self.previous().lexeme
+
+                if not self.match([TT.ASSIGN]):
+                    raise SyntaxError([self.peek().line, f"expected <- after composite name, got  {self.peek().type}"])
+                
+                return self.assign_stmt(dotname, self.previous().line)
+                    
             elif self.match([TT.LEFT_BRACK]):
                 return self.array_assign_stmt(name, self.previous().line)
 
@@ -557,6 +625,9 @@ class Parser:
         elif self.match([TT.IF]):
             return self.if_stmt(self.previous().line)
 
+        elif self.match([TT.CASE]):
+            return self.case_stmt(self.previous().line)
+        
         elif self.match([TT.WHILE]):
             return self.while_stmt(self.previous().line)
 
@@ -569,94 +640,101 @@ class Parser:
         elif self.match([TT.FUNCTION]):
             return self.function_decl_stmt(self.previous().line)
 
+        elif self.match([TT.PROCEDURE]):
+            return self.procedure_decl_stmt(self.previous().line)
+            
         elif self.match([TT.RETURN]):
             return self.return_stmt(self.previous().line)
 
         elif self.match([TT.OPENFILE, TT.CLOSEFILE, TT.READFILE, TT.WRITEFILE]):
             return self.file_handling_stmt(self.previous().line)
 
+        elif self.match([TT.BREAK]):
+            print("Got Break")
+            
         else:
             self.advance()
             raise SyntaxError([self.previous().line, f"Unexpected token '{self.previous().lexeme}'"])
 
-    def expression(self, stmt, line):
-        expr = self.bool_or(stmt, line)
+    def expression(self, line, checkNone=True):
+        expr = self.bool_or(line)
+        if checkNone and expr == None:
+            raise SyntaxError([line, "missing expression"])
+        return expr
 
-        if expr != None:
-            return expr
-
-        else: # Raise an exception if expression is empty
-            raise SyntaxError([line, f"{stmt} missing an expression"])
-
-    def bool_or(self, stmt, line):
-        expr = self.bool_and(stmt, line)
+    def bool_or(self, line):
+        expr = self.bool_and(line)
+            
         while self.match ( [TT.OR] ):
             operator = self.previous()
-            right = self.expression(stmt, line)
+            right = self.expression(line)
+            
             expr = BINARY(expr, operator, right, operator.line)
 
         return expr
 
-    def bool_and(self,  stmt, line):
-        expr = self.comparision()
+    def bool_and(self, line):
+        expr = self.comparision(line)
+            
         while self.match ( [TT.AND] ):
             operator = self.previous()
-            right = self.expression(stmt, line)
+            right = self.expression(line)
+                
             expr = BINARY(expr, operator, right, operator.line)
             
         return expr
     
-    def comparision(self):
-        expr = self.term()
+    def comparision(self, line):
+        expr = self.term(line)
 
         while self.match([TT.GREATER, TT.GREATER_EQUAL, TT.LESS, TT.LESS_EQUAL, TT.LESS_GREATER, TT.BANG_EQUAL, TT.EQUAL, TT.BANG_EQUAL, TT.EQUAL_EQUAL]):
             operator = self.previous()
-            right = self.term()
+            right = self.term(line)
             expr = BINARY(expr, operator, right, operator.line)
             
         return expr
 
-    def term(self):
+    def term(self, line):
 
-        expr = self.factor()
+        expr = self.factor(line)
 
         while self.match([TT.MINUS, TT.PLUS, TT.AMPERSAND ]):
 
             operator = self.previous()
-            right = self.factor()
+            right = self.factor(line)
 
             expr = BINARY (expr, operator, right, operator.line)
 
         return expr
 
-    def factor(self):
-        expr = self.unary()
+    def factor(self, line):
+        expr = self.unary(line)
 
         while self.match([TT.SLASH, TT.STAR, TT.DIV, TT.MOD] ):
             operator = self.previous()
-            right = self.unary()
+            right = self.unary(line)
             expr = BINARY (expr, operator, right, operator.line)
 
         return expr
 
-    def unary(self):
+    def unary(self, line):
         if self.match([TT.BANG, TT.MINUS, TT.NOT]):
             operator = self.previous()
-            right = self.unary()
+            right = self.unary(line)
             return UNARY (operator, right)
 
-        return self.primary()
+        return self.primary(line)
 
-    def primary(self):
+    def primary(self, line):
         
         if self.match([TT.FALSE]): 
-            return LITERAL (False)
+            return LITERAL (False, line)
 
         elif self.match([TT.TRUE]): 
-            return LITERAL(True)
+            return LITERAL(True, line)
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.QUOTE]):
-            return LITERAL(self.previous().literal)
+            return LITERAL(self.previous().literal, line)
 
         elif self.match([TT.IDENTIFIER]):
 
@@ -666,7 +744,7 @@ class Parser:
             # check if this is a variable or a function with arguments
             if self.match([TT.LEFT_PAREN]): # found a function
 
-                args = self.expr_list()
+                args = self.expr_list(line)
 
                 if not self.match([TT.RIGHT_PAREN]):
                     raise SyntaxError([line, f"function missing closing ')' "])
@@ -674,23 +752,26 @@ class Parser:
                 return FUNCTION (name, args, line)
 
             elif self.match([TT.LEFT_BRACK]): # check if it's an array identifier
-                index = self.expr_list()
+                index = self.expr_list(line)
                 
                 if self.match([TT.RIGHT_BRACK]):
                     return ARRAY(name, index, line)
                 else:
                     raise SyntaxError(line, f"array {name} missing ']'")
+            elif self.match([TT.DOT]): # check if it's a composite name
+                if not self.match([TT.IDENTIFIER]):
+                    raise SyntaxError(line, f"composite name missing field name after '.'")
+                return IDENTIFIER(name+"."+self.previous().lexeme, line) 
             else:
                 # check if name is a function without arguments
-                return IDENTIFIER(name)
+                return IDENTIFIER(name, line)
 
         elif self.match([TT.LEFT_PAREN]):
-            expr = self.expression("( ... )", self.previous().line)
+            expr = self.expression(self.previous().line)
 
             if self.match([TT.RIGHT_PAREN]):
-                return GROUPING(expr)
+                return GROUPING(expr, line)
 
             else:
                 raise SyntaxError([self.peek().line, "Missing closing ')'"])
-
         return None

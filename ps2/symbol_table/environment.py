@@ -77,11 +77,12 @@ class Environment:
 
     def symbol_defined(vname):
 
-       # Get current scope
         scope = Environment.global_variables
-        if len(Environment.scopes) != 0:
-            scope = Environment.scopes[0].variables
-
+        for e in Environment.scopes:
+            if vname in e.variables:
+                scope = e
+                break
+                
         return vname in scope
 
     def reset():
@@ -204,7 +205,16 @@ class Array_Symbol(Symbol):
                     raise RuntimeError([line, f"Array {self.vname}[{index1}][{index2}] declared, but no value assigned"])
 
                 return  value
-                
+
+
+class Type_Symbol(Symbol):
+    def __init__(self, name, ttype, line):
+        Symbol.__init__(self, name, ttype)
+        self.line = line
+
+    def __str__(self):
+        return f"TYPE symbol name={self.vname} | type={self.vtype} | line={self.line}"
+
 class File_Symbol(Symbol):
     def __init__(self, name, mode, _fileid):
         Symbol.__init__(self, name, None)
@@ -221,10 +231,23 @@ class Function_Symbol(Symbol):
         self.line = line
 
     def __str__(self):
-        return f"Function symbol name={self.vname} | returns={self.vtype} | args={self.args} | statement_list={self.stmt_list}"
+        return f"FUNCTION symbol name={self.vname} | returns={self.vtype} | args={self.args} | statement_list={self.stmt_list}"
+
+class Procedure_Symbol(Symbol):
+    def __init__(self, name, args, stmt_list, line):
+        Symbol.__init__(self, name, None)
+        self.args = args
+        self.stmt_list = stmt_list
+        self.line = line
+
+    def __str__(self):
+        return f"PROCEDURE symbol name={self.vname} | args={self.args} | statement_list={self.stmt_list}"
+
 
 class Type_Symbol(Symbol):
-    def __init__(self, name, details, line):
-        Symbol.__init__(self, name, "UDT")
-        pass    
-    
+    def __init__(self, name, type, value, line):
+        Symbol.__init__(self, name, type, value)
+        self.line = line   
+        
+    def __str__(self):
+        return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"    

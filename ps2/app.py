@@ -87,6 +87,8 @@ class PS2:
                 Interpretor(statements).interpret()
             except RuntimeError as e:
                 PS2.report(e.args[0][0], "Runtime", e.args[0][1])
+                PS2.hadError = False
+                
         else:
             PS2.hadError = False
 

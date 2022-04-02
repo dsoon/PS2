@@ -4,9 +4,8 @@ import abc
 import ps2.utilities as util
 
 from ps2.symbol_table.environment import Environment as environ
-from ps2.symbol_table.environment import Symbol, Array_Symbol, Function_Symbol, File_Symbol
+from ps2.symbol_table.environment import Symbol, Array_Symbol, Function_Symbol, Procedure_Symbol, File_Symbol, Type_Symbol
 from ps2.scan.ps2_token import TokenType as TT, Token
-
 
 class Statement ( abc.ABC ):
 
@@ -56,12 +55,24 @@ class DECLARE ( Statement ):
 
     def interpret(self):
 
-        symbol = Symbol(self.vname, self.vtype, self.value)
-
-        if self.is_constant:
-            symbol.is_constant = True
+        if self.vtype.type == TT.IDENTIFIER: # composite type delcared
+            userType = environ.get_variable(self.vtype.lexeme)
+            if userType == None:
+                raise RuntimeError([self.line, f"User defined type={self.name} undefined"])
+            # Iterate through list of declares and setup variable in symbol table
+            for s in userType.value:
+                name = self.vname+"."+s.vname
+                stype = s.vtype
+                symbol = Symbol(name, stype)
+                environ.add_variable(symbol)
             
-        environ.add_variable(symbol)
+        else:
+            symbol = Symbol(self.vname, self.vtype, self.value)
+
+            if self.is_constant:
+                symbol.is_constant = True
+                
+            environ.add_variable(symbol)
 
 
 class DECLARE_ARRAY ( Statement ):
@@ -85,32 +96,38 @@ class DECLARE_ARRAY ( Statement ):
         value = []
         if len(self.dimensions) == 1:
 
-            start = self.dimensions[0][0]
-            end =   self.dimensions[0][1]
+            start = self.dimensions[0][0].evaluate()
+            end =   self.dimensions[0][1].evaluate()
             
             if start > end or start < 0:
                 raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
 
+            # Re-write the original parsed values with actual runtime values
+            self.dimensions = [(start, end)]
+            
             value = [ None for _ in range( end - start + 1) ]
 
         elif len(self.dimensions) == 2:
 
-            start = self.dimensions[0][0]
-            end =   self.dimensions[0][1]
+            start1 = self.dimensions[0][0].evaluate()
+            end1 =   self.dimensions[0][1].evaluate()
 
-            if start > end or start < 0:
+            if start1 > end1 or start1 < 0:
                 raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
 
-            value = [ None for _ in range( end- start + 1) ]
+            value = [ None for _ in range( end1- start1 + 1) ]
 
-            start = self.dimensions[1][0]
-            end =   self.dimensions[1][1]
+            start2 = self.dimensions[1][0].evaluate()
+            end2 =   self.dimensions[1][1].evaluate()
 
-            if start > end or start < 0:
+            if start2 > end2 or start2 < 0:
                 raise RuntimeError([self.line, f"ARRAY declaration start index > end index or start index < 0"])
 
+            # Re-write the original parsed values with actual runtime values
+            self.dimensions = [(start1, end1),(start2, end2)]
+            
             for i in range(len(value)):
-                value[i] = [ None for _ in range( end - start + 1) ]
+                value[i] = [ None for _ in range( end2 - start2 + 1) ]
 
         else:
             raise SyntaxError([self.line, f"unsupported dimensions {len(self.dimensions)} - only 1D and 2D supported"])
@@ -143,7 +160,11 @@ class ARRAY_ASSIGN ( Statement ):
         index1 = self.indices[0].evaluate()
         index2 = None
 
-        if not symbol.is1d: # 2D
+        if not symbol.is1d: # its a 2D array
+            
+            if len(self.indices) != 2: # check to see the correct number of indices have been provided
+                raise RuntimeError([self.line, f"{self.vname} is a 2D array, but only 1 idex provided"])
+                
             index2 = self.indices[1].evaluate()
 
         symbol.set_value(self.line, expr, index1, index2)
@@ -169,6 +190,7 @@ class ASSIGN ( Statement ):
         symbol.set_value(value, self.line)
 
 class DECLARE_TYPE(Statement):
+    
     from enum import Enum
 
     class TYPE(Enum):
@@ -185,8 +207,13 @@ class DECLARE_TYPE(Statement):
 
     def interpret(self):
 
+        error = True
         if self.t_type == DECLARE_TYPE.TYPE.COMPOSITE:
-            msg = f"Composite Type: TYPE {self.name} ... ENDTYPE not implemented"
+            
+            # Add Composite Type to Environment
+            userType = Type_Symbol(self.name, DECLARE_TYPE.TYPE.COMPOSITE, self.value, self.line)
+            environ.add_variable(userType)
+            error = False
         
         elif self.t_type == DECLARE_TYPE.TYPE.POINTER:
             msg = f"Pointer Type: TYPE {self.name} = ^ <TYPE> not implemented"
@@ -196,8 +223,9 @@ class DECLARE_TYPE(Statement):
             
         else:
             msg = f"Unknown type found: {self.t_type}"
-        
-        raise SyntaxError([self.line, msg])
+
+        if error:
+            raise SyntaxError([self.line, msg])
 
     def __str__(self):
         return f"Type name={self.name} Type of {self.t_type} found on line {self.line}"
@@ -303,7 +331,6 @@ class REPEAT ( Statement ):
 
 class FOR ( Statement ):
     def __init__(self, assign, expr, step, statement_list, line):
-        assert assign != None and expr!= None and statement_list != None and line != None, "FOR_Statement: None initialiser(s) found"
 
         self.assign = assign
         self.expr = expr
@@ -398,12 +425,37 @@ class IF_ELSE ( Statement ):
 
             environ.pop() # pop scope
 
-
 class CASE ( Statement ):
 
-    def __init__(self):
-        assert False, "CASE_Statement: Note implemented"
-
+    def __init__(self, expr, cases, line):
+        self.expr = expr
+        self.line = line
+        self.cases = cases
+        
+    def interpret(self):
+        value = self.expr.evaluate()
+        for case in self.cases:
+            if case[0] != None:
+                if value == case[0].evaluate():
+                    environ.push(environ()) # push new scope to stack
+                    statement_list = case[1]
+                    
+                    for stmt in statement_list:
+                        stmt.interpret()
+        
+                    environ.pop() # pop scope
+                    break        
+            else:
+                environ.push(environ()) # push new scope to stack
+                statement_list = case[1]
+                
+                for stmt in statement_list:
+                    stmt.interpret()
+    
+                environ.pop() # pop scope
+                break # Not needed, but just in case!
+        
+        
 class DECLARE_FUNCTION ( Statement ):
 
     def __init__(self, name, args, statement_list, rtype, line):
@@ -424,16 +476,21 @@ class DECLARE_FUNCTION ( Statement ):
         environ.add_variable(symbol)
 
 
-class PROCEDURE_DECLARATION ( Statement ):
-    def __init__(self, name, args, statement_list, line):
-        assert name != None and statement_list != None and line != None, "PROC_DECL_Statement: None initialiser(s) found"
+class DECLARE_PROCEDURE( Statement ):
+    def __init__(self, name, args, stmt_list, line):
+        assert name != None and stmt_list != None and line != None, "PROC_DECL_Statement: None initialiser(s) found"
 
         # self.args can be None - this represents a procedure that takes no arguments
 
         self.name = name
         self.args = args
-        self.statement_list = statement_list
+        self.stmt_list = stmt_list
         self.line = line
+
+    def interpret(self):
+
+        symbol = Procedure_Symbol(self.name, self.args, self.stmt_list, self.line)
+        environ.add_variable(symbol)
 
 class CALL ( Statement ):
 
@@ -458,14 +515,48 @@ class CALL ( Statement ):
                 raise RuntimeError([self.line, f"Unrecognised DEBUG parameter {arg}"])
         
         else:
-            raise RuntimeError([self.line, f"Unrecognised procedure call '{self.name}'"])
+            # Check if its a user defined call
+            if environ.symbol_defined(self.name): # Check if this is a user defined procedure:
+                
+                symbol = environ.get_variable(self.name)
+
+                # Create a new environment scope for this function
+                environ.push(environ())
+
+                # Add the parameters to the environment
+                for i, s in enumerate(symbol.args):
+                    id_name = symbol.args[i][0]
+                    id_type = symbol.args[i][1]
+                
+                    # Evaluate the argument and check that it is the required type
+                    arg = self.args[i].evaluate()
+
+                    if  util.check_type(arg, id_type, self.line) == False:
+                        raise RuntimeError([self.line, f"Procedure {self.name} with arg='{arg}' doesn't match type {id_type}"])
+                    
+                    environ.add_variable(Symbol(id_name, id_type , arg)) 
+                
+                try:
+
+                    # Run the body of the procedure, until it returns or completes
+
+                    for stmt in symbol.stmt_list:
+                        stmt.interpret()
+
+                    # Procedure has returned
+                        
+                except util.Return:
+                        pass
+                
+            else:
+                raise RuntimeError([self.line, f"Unrecognised procedure call '{self.name}'"])
 
 
 class RETURN ( Statement ):
 
     def __init__(self, expr):
 
-        assert expr != None, "RETURN_Statement expression is empty"
+        #assert expr != None, "RETURN_Statement expression is empty"
 
         self.expr = expr
 
