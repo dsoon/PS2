@@ -6,7 +6,7 @@ if len(sys.argv) > 1:
     try:
       PS2.runFile(sys.argv[2])
     except IndexError:
-      print("Invalid or blank file path provided - provide path relative to exec dir")
+      print("File argument was blank, check syntax")
 
 if __name__ == "__main__":
     PS2.runPrompt()
