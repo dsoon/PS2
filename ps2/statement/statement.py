@@ -603,7 +603,7 @@ class OPENFILE( Statement ):
         except Exception as e:
             raise RuntimeError([self.line, f"unexpected error while executing OPENFILE {e}"])
 
-        environ.add_variable(File_Symbol(name, mode,file_id))
+        environ.add_variable(File_Symbol(name, mode,file_id,self.line))
 
 
     def __str__(self):

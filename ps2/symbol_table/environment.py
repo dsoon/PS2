@@ -207,8 +207,8 @@ class Array_Symbol(Symbol):
                 return  value
 
 class File_Symbol(Symbol):
-    def __init__(self, name, mode, _fileid):
-        Symbol.__init__(self, name, None)
+    def __init__(self, name, mode, _fileid, line):
+        Symbol.__init__(self, name, None, None, line)
         self.mode = mode
         self._fileid = _fileid
         self.isEOF = False
@@ -225,7 +225,7 @@ class Function_Symbol(Symbol):
 
 class Procedure_Symbol(Symbol):
     def __init__(self, name, args, stmt_list, line):
-        Symbol.__init__(self, name, None)
+        Symbol.__init__(self, name, None, None, line)
         self.args = args
         self.stmt_list = stmt_list
         self.line = line
@@ -236,8 +236,7 @@ class Procedure_Symbol(Symbol):
 
 class Type_Symbol(Symbol):
     def __init__(self, name, type, value, line):
-        Symbol.__init__(self, name, type, value)
-        self.line = line   
+        Symbol.__init__(self, name, type, value, line)
 
     def __str__(self):
         return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"    
