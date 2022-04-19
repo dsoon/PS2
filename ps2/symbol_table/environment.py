@@ -1,5 +1,4 @@
 import ps2.utilities as utilities
-from ps2.scan.ps2_token import TokenType as TT
 
 class Environment:
 
@@ -13,7 +12,7 @@ class Environment:
         Environment.scopes.insert(0, env)
 
     def pop():
-        Environment.scopes.pop(0)
+        return Environment.scopes.pop(0)
 
     def add_variable(symbol):
 
@@ -47,9 +46,9 @@ class Environment:
                 symbol = Environment.global_variables[vname]
 
         if symbol == None:
-            raise NameError(f"Variable '{vname}' not declared")
-        else:
-            return symbol
+            raise NameError(f"Symbol '{vname}' not found")
+        
+        return symbol # Will return None if not defined
 
     def remove_variable(vname):
 
@@ -73,7 +72,7 @@ class Environment:
                 found = True
 
         if not found:
-            raise NameError(f"Variable '{vname}' not declared")
+            raise NameError(f"Symbol '{vname}' not found")
 
     def symbol_defined(vname):
 
@@ -104,11 +103,12 @@ class Environment:
                 print(f"{scope[k]}")
 
 class Symbol:
-    def __init__(self, vname, vtype, value=None):
+    def __init__(self, vname, vtype, value, line):
         self.vname  = vname
         self.vtype = vtype
         self.value = value
-        self.is_constant = False
+        self.line = line
+        self.is_constant = False        
 
     def type_match(self, val, line):
 
@@ -130,9 +130,9 @@ class Symbol:
         return f"Symbol name={self.vname} | type={self.vtype} | value={self.value} is_constant={self.is_constant}"
 
 class Array_Symbol(Symbol):
-    def __init__(self, vname, dimensions, vtype, value):
+    def __init__(self, vname, dimensions, vtype, value, line):
 
-        Symbol.__init__(self, vname, vtype, value)
+        Symbol.__init__(self, vname, vtype, value, line)
         
         self.dimensions = dimensions
         self.is1d = len(dimensions) == 1
@@ -206,15 +206,6 @@ class Array_Symbol(Symbol):
 
                 return  value
 
-
-class Type_Symbol(Symbol):
-    def __init__(self, name, ttype, line):
-        Symbol.__init__(self, name, ttype)
-        self.line = line
-
-    def __str__(self):
-        return f"TYPE symbol name={self.vname} | type={self.vtype} | line={self.line}"
-
 class File_Symbol(Symbol):
     def __init__(self, name, mode, _fileid):
         Symbol.__init__(self, name, None)
@@ -224,11 +215,10 @@ class File_Symbol(Symbol):
 
 class Function_Symbol(Symbol):
     def __init__(self, name, args, rtype, stmt_list, line):
-        Symbol.__init__(self, name, rtype)
+        Symbol.__init__(self, name, rtype, None, line)
         self.args = args
         self.rtype = rtype
         self.stmt_list = stmt_list
-        self.line = line
 
     def __str__(self):
         return f"FUNCTION symbol name={self.vname} | returns={self.vtype} | args={self.args} | statement_list={self.stmt_list}"
@@ -248,6 +238,6 @@ class Type_Symbol(Symbol):
     def __init__(self, name, type, value, line):
         Symbol.__init__(self, name, type, value)
         self.line = line   
-        
+
     def __str__(self):
         return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"    

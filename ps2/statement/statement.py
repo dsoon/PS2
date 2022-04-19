@@ -58,16 +58,17 @@ class DECLARE ( Statement ):
         if self.vtype.type == TT.IDENTIFIER: # composite type delcared
             userType = environ.get_variable(self.vtype.lexeme)
             if userType == None:
-                raise RuntimeError([self.line, f"User defined type={self.name} undefined"])
-            # Iterate through list of declares and setup variable in symbol table
+                raise SyntaxError([self.line, f"User defined type '{self.vtype.lexeme}' undefined"])
+                
+            # Now iterate through list of declares and setup variable in symbol table
             for s in userType.value:
                 name = self.vname+"."+s.vname
                 stype = s.vtype
-                symbol = Symbol(name, stype)
+                symbol = Symbol(name, stype, self.line)
                 environ.add_variable(symbol)
             
         else:
-            symbol = Symbol(self.vname, self.vtype, self.value)
+            symbol = Symbol(self.vname, self.vtype, self.value, self.line)
 
             if self.is_constant:
                 symbol.is_constant = True
@@ -132,7 +133,7 @@ class DECLARE_ARRAY ( Statement ):
         else:
             raise SyntaxError([self.line, f"unsupported dimensions {len(self.dimensions)} - only 1D and 2D supported"])
 
-        symbol = Array_Symbol(self.vname, self.dimensions, self.vtype, value)
+        symbol = Array_Symbol(self.vname, self.dimensions, self.vtype, value, self.line)
 
         environ.add_variable(symbol)
 
@@ -187,6 +188,7 @@ class ASSIGN ( Statement ):
             raise RuntimeError([self.line, f"cannot change a value of a constant '{ self.vname }'"])
 
         #symbol.value = value
+        #print(f"setting symbol {symbol} to {value} on line {self.line}")
         symbol.set_value(value, self.line)
 
 class DECLARE_TYPE(Statement):
@@ -345,7 +347,7 @@ class FOR ( Statement ):
     
         environ.push(environ()) # push new scope to stack
 
-        symbol = Symbol(self.assign.vname, Token(TT.INTEGER, "", self.assign.vname, self.assign.line))
+        symbol = Symbol(self.assign.vname, Token(TT.INTEGER, "", self.assign.vname, self.line), None, self.line)
 
         environ.add_variable( symbol )
 
@@ -534,7 +536,7 @@ class CALL ( Statement ):
                     if  util.check_type(arg, id_type, self.line) == False:
                         raise RuntimeError([self.line, f"Procedure {self.name} with arg='{arg}' doesn't match type {id_type}"])
                     
-                    environ.add_variable(Symbol(id_name, id_type , arg)) 
+                    environ.add_variable(Symbol(id_name, id_type , arg, self.line)) 
                 
                 try:
 

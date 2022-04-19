@@ -16,7 +16,7 @@ class UNARY(Expression):
         self.right  = right
 
     def evaluate(self):
-
+        
         right_value  = self.right.evaluate()
 
         if self.operator.lexeme == '-':
@@ -333,7 +333,7 @@ class FUNCTION(Expression):
                 if  util.check_type(arg, id_type, self.line) == False:
                     raise RuntimeError([self.line, f"Function {self.name} with arg='{arg}' doesn't match type {id_type}"])
                     
-                environ.add_variable(Symbol(id_name, id_type , arg)) 
+                environ.add_variable(Symbol(id_name, id_type , arg, self.line)) 
                 
             try:
 
@@ -346,11 +346,10 @@ class FUNCTION(Expression):
             except util.Return as r:
                 return_val = r.args[0]
 
-            environ.pop()
-
             if return_val == None:
                 raise RuntimeError([self.line, f"Function '{self.name}()' returned without a value"])
 
+            environ.pop()
             return return_val
         
         else:
