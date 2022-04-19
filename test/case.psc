@@ -6,6 +6,6 @@ CASE OF In
     "A" : OUTPUT "You typed in A" BREAK
     "S" : OUTPUT "You typed in S" BREAK
     "D" : OUTPUT "You typed in D" BREAK
-    OTHERWISE : OUTPUT "Do as you are told!" BREAK
+    OTHERWISE : OUTPUT "It seems you didn't type in W, A, S or D" BREAK
 ENDCASE
 OUTPUT "All Done"

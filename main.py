@@ -1,4 +1,5 @@
 import argparse
+
 from ps2.app import PS2 as PS2
 
 parser = argparse.ArgumentParser()
