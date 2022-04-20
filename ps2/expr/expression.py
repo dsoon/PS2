@@ -319,7 +319,7 @@ class FUNCTION(Expression):
             symbol = environ.get_variable(self.name)
 
             # Create a new environment scope for this function
-            environ.push(environ())
+            environ.push({})
 
             # Add the parameters to the environment
             for i, s in enumerate(symbol.args):

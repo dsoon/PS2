@@ -55,7 +55,7 @@ class DECLARE ( Statement ):
 
     def interpret(self):
 
-        if self.vtype.type == TT.IDENTIFIER: # composite type delcared
+        if self.vtype == TT.IDENTIFIER: # composite type delcared
             userType = environ.get_variable(self.vtype.lexeme)
             if userType == None:
                 raise SyntaxError([self.line, f"User defined type '{self.vtype.lexeme}' undefined"])
@@ -272,10 +272,10 @@ class INPUT ( Statement ):
         vtype = symbol.vtype
         value = input()
 
-        if vtype.type == TT.INTEGER:
+        if vtype == TT.INTEGER:
             symbol.value = int(value)
 
-        elif vtype.type == TT.REAL:
+        elif vtype == TT.REAL:
             symbol.value = float(value)
 
         elif vtype == TT.BOOLEAN:
@@ -299,7 +299,7 @@ class WHILE ( Statement ):
 
     def interpret(self):
         
-        environ.push(environ()) # push new scope to stack
+        environ.push({}) # push new scope to stack
         
         while self.condition.evaluate() == True:
 
@@ -319,7 +319,7 @@ class REPEAT ( Statement ):
 
     def interpret(self):
 
-        environ.push(environ()) # push new scope to stack
+        environ.push({}) # push new scope to stack
         
         while True:
             for stmt in self.statement_list:
@@ -345,7 +345,7 @@ class FOR ( Statement ):
         ####
         # Declare a loop variable, normally all variable are explicitly declared, except for loop variables. 
     
-        environ.push(environ()) # push new scope to stack
+        environ.push({}) # push new scope to stack
 
         symbol = Symbol(self.assign.vname, Token(TT.INTEGER, "", self.assign.vname, self.line), None, self.line)
 
@@ -388,7 +388,7 @@ class IF ( Statement ):
     def interpret(self):
 
         if self.condition.evaluate() == True:
-            environ.push(environ()) # push new scope to stack
+            environ.push({}) # push new scope to stack
 
             for stmt in self.statement_list:
                 stmt.interpret()
@@ -411,7 +411,7 @@ class IF_ELSE ( Statement ):
 
         if self.condition.evaluate() == True:
 
-            environ.push(environ()) # push new scope to stack
+            environ.push({}) # push new scope to stack
 
             for stmt in self.statement_list:
                 stmt.interpret()
@@ -420,7 +420,7 @@ class IF_ELSE ( Statement ):
         
         else:
 
-            environ.push(environ()) # push new scope to stack
+            environ.push({}) # push new scope to stack
 
             for stmt in self.else_statement_list:
                 stmt.interpret()
@@ -439,7 +439,7 @@ class CASE ( Statement ):
         for case in self.cases:
             if case[0] != None:
                 if value == case[0].evaluate():
-                    environ.push(environ()) # push new scope to stack
+                    environ.push({}) # push new scope to stack
                     statement_list = case[1]
                     
                     for stmt in statement_list:
@@ -448,7 +448,7 @@ class CASE ( Statement ):
                     environ.pop() # pop scope
                     break        
             else:
-                environ.push(environ()) # push new scope to stack
+                environ.push({}) # push new scope to stack
                 statement_list = case[1]
                 
                 for stmt in statement_list:
@@ -523,7 +523,7 @@ class CALL ( Statement ):
                 symbol = environ.get_variable(self.name)
 
                 # Create a new environment scope for this function
-                environ.push(environ())
+                environ.push({})
 
                 # Add the parameters to the environment
                 for i, s in enumerate(symbol.args):

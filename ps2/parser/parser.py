@@ -115,17 +115,17 @@ class Parser:
 
 
             
-            return DECLARE_ARRAY(name, dimensions, self.previous(), line)
+            return DECLARE_ARRAY(name, dimensions, self.previous().type, line)
 
 
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]) :
             
-            return DECLARE(name, self.previous(), line, False)
+            return DECLARE(name, self.previous().type, line, False)
 
         else: # It must be a User Defined Type
             self.advance()
-            return DECLARE(name, self.previous(), line, False)
+            return DECLARE(name, self.previous().type, line, False)
 
             
             

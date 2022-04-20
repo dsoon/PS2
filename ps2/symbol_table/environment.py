@@ -16,10 +16,13 @@ class Environment:
 
     def add_variable(symbol):
 
+        ## DEBUG ##
+        #print(symbol)
+
         # Get current scope
         scope = Environment.global_variables
         if len(Environment.scopes) != 0:
-            scope = Environment.scopes[0].variables
+            scope = Environment.scopes[0]
             
         if symbol.vname not in scope:
             scope[symbol.vname] = symbol
@@ -32,7 +35,7 @@ class Environment:
 
         if len(Environment.scopes) != 0:
             for i in range(len(Environment.scopes)):
-                scope = Environment.scopes[i].variables
+                scope = Environment.scopes[i]
                 
                 if vname in scope:
                     symbol = scope[vname]
@@ -78,7 +81,7 @@ class Environment:
 
         scope = Environment.global_variables
         for e in Environment.scopes:
-            if vname in e.variables:
+            if vname in e:
                 scope = e
                 break
                 
@@ -112,7 +115,7 @@ class Symbol:
 
     def type_match(self, val, line):
 
-        match = utilities.check_type(val, self.vtype.type, line)
+        match = utilities.check_type(val, self.vtype, line)
         
         if not match:
             raise RuntimeError([line, f"Invalid assignment, cannot assign a {utilities.isType(val)} to a {self.vtype.type}"])
