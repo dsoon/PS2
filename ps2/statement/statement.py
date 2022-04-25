@@ -4,7 +4,7 @@ import abc
 import ps2.utilities as util
 
 from ps2.symbol_table.environment import Environment as environ
-from ps2.symbol_table.environment import Symbol, Array_Symbol, Function_Symbol, Procedure_Symbol, File_Symbol, Type_Symbol
+from ps2.symbol_table.environment import Symbol, Array_Symbol, Function_Symbol, Procedure_Symbol, File_Symbol, Type_Symbol, Enum_Symbol
 from ps2.scan.ps2_token import TokenType as TT, Token
 
 class Statement ( abc.ABC ):
@@ -55,8 +55,8 @@ class DECLARE ( Statement ):
 
     def interpret(self):
 
-        if self.vtype == TT.IDENTIFIER: # composite type delcared
-            userType = environ.get_variable(self.vtype.lexeme)
+        if self.vtype == TT.IDENTIFIER: # composite or enum type delcared
+            userType = environ.get_variable(self.vname)
             if userType == None:
                 raise SyntaxError([self.line, f"User defined type '{self.vtype.lexeme}' undefined"])
                 
@@ -221,8 +221,8 @@ class DECLARE_TYPE(Statement):
             msg = f"Pointer Type: TYPE {self.name} = ^ <TYPE> not implemented"
             
         elif self.t_type == DECLARE_TYPE.TYPE.ENUM:
-            msg = f"Enum Type: TYPE {self.name} = (VALUE1, VLAUE2, ...)not implemented"
-            
+            environ.add_variable(Enum_Symbol(self.name, DECLARE_TYPE.TYPE.ENUM, self.value, self.line))       
+            error = False
         else:
             msg = f"Unknown type found: {self.t_type}"
 

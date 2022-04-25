@@ -125,7 +125,7 @@ class Parser:
 
         else: # It must be a User Defined Type
             self.advance()
-            return DECLARE(name, self.previous().type, line, False)
+            return DECLARE(name, self.previous().lexeme, line, False)
 
             
             
@@ -535,7 +535,7 @@ class Parser:
         raise SyntaxError([line, f"Expected file operation {self.previous().literal}"])
 
     def type_stmt(self, line):
-        # They are three type of user defined data types
+        # They are three types of user defined data types
         # 
         if not self.match([TT.IDENTIFIER]):
             raise SyntaxError([line, f"TYPE expected an identifier, got {self.peek().literal} instead"])
@@ -546,12 +546,25 @@ class Parser:
         if self.match([TT.EQUAL]): # Non-composite
             # Check if its an Enum or a pointer
 
-            if self.match([TT.LEFT_BRACK]): # Enum type found
+            if self.match([TT.LEFT_PAREN]): # Enum type found
+
                 value = []
+                while not self.match([TT.RIGHT_PAREN]):
+                    if not self.match([TT.IDENTIFIER]):
+                        raise SyntaxError([line, f"TYPE ENUM expected an Identifier got {self.peek()}"])
+                    else:
+                        value.append(self.previous().literal)
+
+                    if self.match([TT.COMMA]) or self.peek().type == TT.RIGHT_PAREN:
+                        continue
+
+                    else:
+                        raise SyntaxError([line, f"TYPE ENUM expected a comma got or ')' got {self.peek()}"])
 
                 return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.ENUM, value, line)
                 
             elif self.match([TT.CAP]): # Pointer type found
+                
                 value = None
                 return DECLARE_TYPE (name, DECLARE_TYPE.TYPE.POINTER, value, line)    
                 

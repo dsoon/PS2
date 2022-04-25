@@ -1,4 +1,5 @@
 import ps2.utilities as utilities
+from ps2.scan.ps2_token import TokenType as TT
 
 class Environment:
 
@@ -122,11 +123,10 @@ class Symbol:
 
         return True
 
-    
     def set_value(self, val, line):
 
         if  self.type_match(val, line):
-                self.value = val
+            self.value = val
 
             
     def __str__(self):
@@ -242,4 +242,16 @@ class Type_Symbol(Symbol):
         Symbol.__init__(self, name, type, value, line)
 
     def __str__(self):
-        return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"    
+        return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"
+
+class Enum_Symbol(Type_Symbol):
+    def __init__(self, name, type, value, line):
+        Symbol.__init__(self, name, type, value, line)
+
+    def set_value(self, val, line):    
+        print("Enum_SYmbol.setval called")
+        print (type(self)) 
+
+    def __str__(self):
+        return f"ENUM symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"
+    
