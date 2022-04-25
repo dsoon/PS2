@@ -125,11 +125,12 @@ class Parser:
 
         else: # It must be a User Defined Type
             self.advance()
-            return DECLARE(name, self.previous().type, line, False)
+
+            token = self.previous()
+            
+            return DECLARE(name+":"+token.lexeme, token.type, line, False)
 
             
-            
-
     def function_decl_stmt(self, line):
         """
         Parse a FUNCTION declaration, 

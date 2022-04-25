@@ -45,6 +45,12 @@ class DECLARE ( Statement ):
             "DECLARE statement: None initialiser(s) found"
 
         self.vname = vname
+        self.utype = None
+        
+        if ":" in vname:
+            self.vname = vname[:vname.index(":")]
+            self.utype = vname[vname.index(":")+1:]
+
         self.vtype = vtype
         self.line = line
         self.is_constant = is_constant
@@ -56,15 +62,15 @@ class DECLARE ( Statement ):
     def interpret(self):
 
         if self.vtype == TT.IDENTIFIER: # composite type delcared
-            userType = environ.get_variable(self.vtype.lexeme)
+            userType = environ.get_variable(self.utype)
             if userType == None:
                 raise SyntaxError([self.line, f"User defined type '{self.vtype.lexeme}' undefined"])
                 
             # Now iterate through list of declares and setup variable in symbol table
-            for s in userType.value:
+            for i, s in enumerate(userType.value):
                 name = self.vname+"."+s.vname
                 stype = s.vtype
-                symbol = Symbol(name, stype, self.line)
+                symbol = Symbol(name, stype, i, self.line)
                 environ.add_variable(symbol)
             
         else:
