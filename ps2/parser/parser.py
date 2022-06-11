@@ -425,7 +425,7 @@ class Parser:
         if not self.match([TT.EQUAL]):
             raise SyntaxError([line, f"CONSTANT missing '=', got {self.peek().lexeme}"])
 
-        value = self.primary()
+        value = self.primary(line)
 
         if value == None:
             raise SyntaxError([line, f"CONSTANT missing a value"])
