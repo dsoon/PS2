@@ -177,9 +177,25 @@ class ARRAY(Expression):
             index2 = self.indices[1].evaluate()
 
         return symbol.get_value(self.line, index1, index2)
+        
+### Currently being worked on
+class ARRAY_UDT(ARRAY):
+    def __init__(self, name, expression_list, field, line):
+        super().__init__(self, name, expression_list, line)
+        self.udt_field = field
+        
+    def evaluate(self):
 
+        symbol = environ.get_variable(self.name)
 
+        index1 = self.indices[0].evaluate()
+        index2 = None
+        if not symbol.is1d:
+            index2 = self.indices[1].evaluate()
 
+        return symbol.get_value(self.line, index1, index2)
+### Currently being worked on
+        
 class FUNCTION(Expression):
     def __init__(self, name, args, line):
         self.name = name

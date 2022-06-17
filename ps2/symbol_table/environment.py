@@ -243,3 +243,24 @@ class Type_Symbol(Symbol):
 
     def __str__(self):
         return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"    
+
+class Composite_Type_Symbol(Type_Symbol):
+    def __init__(self, name, type, value, line):
+        Symbol.__init__(self, name, type, value, line)
+
+    def __str__(self):
+        return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"  
+
+class Enum_Type_Symbol(Type_Symbol):
+    def __init__(self, name, type, value, line):
+        Symbol.__init__(self, name, type, value, line)
+
+    def __str__(self):
+        return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}"  
+
+class Pointer_Type_Symbol(Type_Symbol):
+    def __init__(self, name, type, value, line):
+        Symbol.__init__(self, name, type, value, line)
+
+    def __str__(self):
+        return f"TYPE symbol name={self.vname} | type={self.vtype} | value={self.value} | line={self.line}" 

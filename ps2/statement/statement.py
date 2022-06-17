@@ -90,7 +90,12 @@ class DECLARE_ARRAY ( Statement ):
 
         self.vname = vname
         self.vtype = vtype
-
+        self.utype = None
+        
+        if ":" in vname:
+            self.vname = vname[:vname.index(":")]
+            self.utype = vname[vname.index(":")+1:]
+        
         self.dimensions = dimensions
 
         if len(dimensions) < 1 or len(dimensions) > 2:
@@ -111,8 +116,11 @@ class DECLARE_ARRAY ( Statement ):
 
             # Re-write the original parsed values with actual runtime values
             self.dimensions = [(start, end)]
-            
-            value = [ None for _ in range( end - start + 1) ]
+
+            if self.utype == None:
+                value = [ None for _ in range( end - start + 1) ]
+            else:
+                raise RuntimeError([self.line, "Array of UDT not implemented yet"])
 
         elif len(self.dimensions) == 2:
 
@@ -278,20 +286,22 @@ class INPUT ( Statement ):
         vtype = symbol.vtype
         value = input()
 
-        if vtype == TT.INTEGER:
-            symbol.value = int(value)
-
-        elif vtype == TT.REAL:
-            symbol.value = float(value)
-
-        elif vtype == TT.BOOLEAN:
-            symbol.value = bool(value.capitalize())
-
-        elif vtype == TT.STRING or TT.CHAR:
-            symbol.value = value
-        else:
-            raise RuntimeError([self.line, f"INPUT() does not recognise the data type of {self.name}"])
-
+        try:
+            if vtype == TT.INTEGER:
+                symbol.value = int(value)
+    
+            elif vtype == TT.REAL:
+                symbol.value = float(value)
+    
+            elif vtype == TT.BOOLEAN:
+                symbol.value = bool(value.capitalize())
+    
+            elif vtype == TT.STRING or TT.CHAR:
+                symbol.value = value
+            else:
+                raise RuntimeError([self.line, f"INPUT does not recognise the data type of {self.name}"])
+        except Exception as e:
+             raise RuntimeError([self.line, f"INPUT unable to convert type for {self.name}: {e}"])
 
 class WHILE ( Statement ):
 

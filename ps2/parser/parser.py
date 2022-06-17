@@ -110,14 +110,15 @@ class Parser:
 
 
             # Now get they type of the Variable
-            if not self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]):
+            if self.match([TT.IDENTIFIER]): # Array of User defined types
+                token = self.previous()
+                return DECLARE_ARRAY(name+":"+token.lexeme, dimensions, token.type, line)
+                
+            elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]):
+                return DECLARE_ARRAY(name, dimensions, self.previous().type, line)
+                
+            else:
                 raise SyntaxError([self.previous().line, f"ARRAY declaration missing valid type, got '{self.peek().lexeme}', expected INTEGER, REAL, STRING, BOOLEAN, CHAR"])
-
-
-            
-            return DECLARE_ARRAY(name, dimensions, self.previous().type, line)
-
-
 
         elif self.match([TT.INTEGER, TT.REAL, TT.STRING, TT.BOOLEAN, TT.CHAR]) :
             
