@@ -17,7 +17,7 @@ class Scanner:
 
         self.tokens.append(Token(TT.AT_EOF, "", None, self.line))
         
-        return self.tokens;
+        return self.tokens
 
     def scanToken(self):
         c = self.advance()
@@ -98,7 +98,7 @@ class Scanner:
                 self.addToken(TT.SLASH)
 
         elif c == " " or c == "\r" or c == "\t":
-          pass
+            pass
 
         elif c == "\n":
             self.line += 1
@@ -126,7 +126,7 @@ class Scanner:
         self.current += 1
         return True
 
-    def addToken(self, *args, **kwargs):
+    def addToken(self, *args):
         if len(args) == 1:
             self.addToken(args[0], None)
 
@@ -202,7 +202,7 @@ class Scanner:
             self.addToken(TT.REAL, float(self.source[self.start:self.current]))
         else:
             self.addToken(TT.INTEGER, int(self.source[self.start:self.current]))
-    
+
     def identifier(self):
         while self.peek().isalnum() or self.peek() == "_":
             self.advance()

@@ -201,14 +201,14 @@ keywords = {
     
 class Token:
 
-    def __init__(self, type, lexeme, literal, line):
-        self.type = type
+    def __init__(self, t_type, lexeme, literal, line):
+        self.type = t_type
         self.lexeme = lexeme
         self.literal = literal
         self.line = line
 
     def __repr__(self):
-        return self.str()
+        return self.__str__()
 
     def __str__(self):
         return f"type={self.type} | lexeme={self.lexeme} | literal={self.literal} | line#={self.line}"
